@@ -27,7 +27,7 @@ Construir una aplicación SaaS de organización personal o planes compartidos, p
 
 ## Jira
 - Sitio `michael-hoyos-94.atlassian.net`, proyecto **Sht2do**. Épicas con issues de tipo "Feature" como funcionalidad.
-- Estados: `Tareas por hacer` → **`Working`** → **`Finalizada`** (DONE) o **`Returned`**.
+- Estados: **`To do`** → **`Working`** → **`Done`** o **`Returned`**.
 
 ## Flujo de trabajo (Spec driven development)
 1. Lee la tarea `STD-###` en Jira. Esta es la spec de la feature: el qué construimos. Si no existe, créala; si es necesario, refínala para reducir ambigüedad o cabos sueltos. Mueve `STD-###` a **Working**.
@@ -36,7 +36,8 @@ Construir una aplicación SaaS de organización personal o planes compartidos, p
 4. Delega el trabajo en paralelo a los agentes de implementación `backend-implementer` y `frontend-implementer` (`.claude/agents/`).
 5. Lanza el agente `qa-reviewer` para la revisión.
 6. Espera mi validación de las pruebas manuales.
-7. Con mi aprobación, mueve la tarea `STD-###` a **Finalizada** en Jira si todo está bien, o a **Returned**.
+7. Con mi aprobación, mueve la tarea `STD-###` a **Done** en Jira si todo está bien, o a **Returned**.
+8. Crea una pull request con los cambios para integrarlos a la rama `main`.
 
 ## Formato de salida
 - Describe brevemente lo que hiciste

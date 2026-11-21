@@ -196,7 +196,7 @@ routes → controller → service → repository (Prisma)
 
 - La rama `main` siempre está estable. Cada feature se desarrolla en su rama `feature/STD-###-nombre-corto`.
 - Los commits siguen **Conventional Commits** en inglés y citan la clave de Jira: `feat(tasks): add occurrence status change [STD-9]`.
-- Una feature se integra en `main` solo después de la revisión de QA y de la aprobación de las pruebas manuales del responsable.
+- Una feature se integra en `main` solo después de la revisión de QA y de la aprobación de las pruebas manuales del responsable, via pull request.
 - **NO DEBEN** versionarse `.env`, credenciales, `node_modules`, builds, reportes de cobertura ni datos locales de Docker.
 
 ## 13. Definición de terminado (técnica)
