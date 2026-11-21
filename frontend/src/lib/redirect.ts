@@ -1,6 +1,8 @@
 /** Solo se aceptan rutas internas: empiezan por "/" y no por "//" (ni "/\\", que el navegador trata igual). */
 export function safeRedirect(value: string | null | undefined): string {
-  return value && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\') ? value : '/';
+  return value && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\')
+    ? value
+    : '/';
 }
 
 /** Añade `?redirect=` a un enlace interno solo si el valor es una ruta interna válida distinta de `/`. */
