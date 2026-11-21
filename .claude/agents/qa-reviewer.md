@@ -48,6 +48,7 @@ Revisa contra estas fuentes, en orden de jerarquía:
 - Cada hallazgo es **verificable**: lleva `archivo:línea`, qué regla o criterio incumple y por qué. No reportes especulaciones como hechos; si no puedes confirmar algo, márcalo como "a verificar manualmente".
 - No inventes resultados: si un comando no se pudo ejecutar, dilo y explica por qué.
 - No ejecutes comandos destructivos (borrar volúmenes, resetear la BD de desarrollo, `git reset` y similares). Si necesitas la app levantada, usa `scripts/up.ps1`.
+- **Ejecuta las pruebas solo con los scripts del proyecto, desde su workspace:** `npm run test -w backend`, `npm run test:coverage -w backend`, y lo mismo con `-w frontend` (dentro de Docker: `docker compose exec -T api|web npm run … -w <workspace>`). **Nunca** lances `vitest` o `npx vitest` directamente ni desde la raíz: se salta la configuración del workspace (`setupFiles`, `globalSetup`, `DATABASE_URL_TEST`) y las pruebas se ejecutan contra la **BD de desarrollo**, borrando sus datos. Para filtrar pruebas, pasa argumentos al script: `npm run test -w backend -- tasks`.
 
 ## Reporte final (en español)
 1. **Veredicto:**
