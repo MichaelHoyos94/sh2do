@@ -1,0 +1,358 @@
+openapi: 3.1.0
+info:
+  title: Sh2do API — STD-6 Registro e inicio de sesión
+  version: 1.0.0
+  description: |
+    Registro, verificación de correo, inicio/cierre de sesión y usuario actual.
+
+    **Sesión**
+    - Access token: JWT de 15 min, enviado como `Authorization: Bearer <token>`. El cliente lo guarda solo en memoria.
+    - Refresh token: cookie `sh2do_rt` (HttpOnly, SameSite=Strict, Path=/api/v1/auth, Max-Age 30 días, Secure fuera de local). Se rota en cada uso.
+
+    **Errores**: `application/problem+json` (RFC 9457) con `code` estable; `title`, `detail` y `message` en español.
+servers:
+  - url: /api/v1
+
+tags:
+  - name: auth
+  - name: users
+  - name: ops
+
+paths:
+  /health:
+    get:
+      tags: [ops]
+      operationId: health
+      summary: Liveness (healthcheck de Docker)
+      description: Fuera del prefijo `/api/v1`. Sin autenticación.
+      servers:
+        - url: /
+      responses:
+        '200':
+          description: La API está viva.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, const: ok }
+
+  /auth/register:
+    post:
+      tags: [auth]
+      operationId: register
+      summary: Registrar cuenta e iniciar sesión
+      description: |
+        Crea la cuenta (correo normalizado: trim + minúsculas), inicia sesión y encola el correo de verificación (enlace válido 24 h).
+        Límite: 5 registros por hora por IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Cuenta creada y sesión iniciada.
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/SetRefreshCookie' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '409':
+          description: Ya existe una cuenta con ese correo (`EMAIL_ALREADY_REGISTERED`).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Iniciar sesión
+      description: |
+        Permitido aunque el correo no esté verificado.
+        Límite: 5 intentos fallidos cada 15 min por correo + IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Sesión iniciada.
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/SetRefreshCookie' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '401':
+          description: |
+            Credenciales incorrectas (`INVALID_CREDENTIALS`). Mismo cuerpo si el correo no existe o la contraseña es errónea.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+              example:
+                type: https://sh2do.app/problems/invalid-credentials
+                title: Credenciales incorrectas
+                status: 401
+                detail: Correo o contraseña incorrectos.
+                code: INVALID_CREDENTIALS
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refreshSession
+      summary: Renovar la sesión
+      description: |
+        Usa la cookie `sh2do_rt`; la revoca y emite una nueva (rotación) y un access token nuevo.
+        Si se presenta un refresh ya rotado (reutilización), se revocan todas las sesiones del usuario.
+      parameters:
+        - $ref: '#/components/parameters/RefreshCookie'
+      responses:
+        '200':
+          description: Sesión renovada.
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/SetRefreshCookie' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthSession' }
+        '401':
+          description: Cookie ausente, inválida, vencida, revocada o reutilizada (`SESSION_INVALID`). Se borra la cookie.
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/ClearRefreshCookie' }
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Cerrar sesión
+      description: Revoca la sesión de la cookie (si existe) y borra la cookie. Idempotente.
+      parameters:
+        - $ref: '#/components/parameters/RefreshCookie'
+      responses:
+        '204':
+          description: Sesión cerrada.
+          headers:
+            Set-Cookie: { $ref: '#/components/headers/ClearRefreshCookie' }
+
+  /auth/verify-email:
+    post:
+      tags: [auth]
+      operationId: verifyEmail
+      summary: Verificar el correo
+      description: No requiere sesión; el token del enlace es la credencial. Un token solo se puede usar una vez.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyEmailRequest' }
+      responses:
+        '200':
+          description: Correo verificado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VerifyEmailResponse' }
+        '400':
+          description: |
+            `VERIFICATION_TOKEN_INVALID` (inexistente, ya usado o anulado por un reenvío) o `VERIFICATION_TOKEN_EXPIRED` (más de 24 h).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/verification-email:
+    post:
+      tags: [auth]
+      operationId: resendVerificationEmail
+      summary: Reenviar el correo de verificación
+      description: |
+        Genera un enlace nuevo (24 h) y anula los anteriores sin usar.
+        Límite: 3 por hora por usuario.
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Correo encolado.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409':
+          description: El correo ya está verificado (`EMAIL_ALREADY_VERIFIED`).
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problem' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /users/me:
+    get:
+      tags: [users]
+      operationId: getCurrentUser
+      summary: Usuario actual
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario autenticado.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RefreshCookie:
+      name: sh2do_rt
+      in: cookie
+      required: false
+      description: Refresh token opaco (lo gestiona el navegador; el frontend no lo lee).
+      schema: { type: string }
+
+  headers:
+    SetRefreshCookie:
+      description: '`sh2do_rt=<token>; HttpOnly; SameSite=Strict; Path=/api/v1/auth; Max-Age=2592000[; Secure]`'
+      schema: { type: string }
+    ClearRefreshCookie:
+      description: '`sh2do_rt=; HttpOnly; SameSite=Strict; Path=/api/v1/auth; Max-Age=0`'
+      schema: { type: string }
+
+  responses:
+    ValidationError:
+      description: Datos inválidos (`VALIDATION_ERROR`), con un error por campo.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/validation-error
+            title: Datos inválidos
+            status: 422
+            detail: Revisa los campos marcados.
+            code: VALIDATION_ERROR
+            errors:
+              - field: password
+                message: La contraseña debe tener al menos 8 caracteres.
+    Unauthenticated:
+      description: Falta el access token, es inválido o venció (`UNAUTHENTICATED`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Demasiados intentos (`TOO_MANY_REQUESTS`).
+      headers:
+        Retry-After:
+          description: Segundos hasta poder reintentar.
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [displayName, email, password, timezone]
+      properties:
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 60
+          description: Se recorta (trim) antes de validar.
+          examples: [Ana]
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Se normaliza (trim + minúsculas).
+          examples: [ana@example.com]
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: Sin reglas de composición. La confirmación se valida solo en el frontend.
+        timezone:
+          type: string
+          maxLength: 64
+          description: Zona IANA detectada en el navegador. Si no es válida, se guarda `UTC`.
+          examples: [America/Bogota]
+
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 128 }
+
+    VerifyEmailRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 128 }
+
+    VerifyEmailResponse:
+      type: object
+      required: [emailVerified]
+      properties:
+        emailVerified: { type: boolean, const: true }
+
+    User:
+      type: object
+      required: [id, displayName, email, emailVerified, timezone]
+      properties:
+        id: { type: integer, examples: [1] }
+        displayName: { type: string, examples: [Ana] }
+        email: { type: string, format: email, examples: [ana@example.com] }
+        emailVerified: { type: boolean }
+        timezone: { type: string, examples: [America/Bogota] }
+
+    AuthSession:
+      type: object
+      required: [accessToken, accessTokenExpiresIn, user]
+      properties:
+        accessToken: { type: string, description: JWT HS256 }
+        accessTokenExpiresIn: { type: integer, description: Segundos de vigencia, const: 900 }
+        user: { $ref: '#/components/schemas/User' }
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - EMAIL_ALREADY_REGISTERED
+            - INVALID_CREDENTIALS
+            - UNAUTHENTICATED
+            - SESSION_INVALID
+            - VERIFICATION_TOKEN_INVALID
+            - VERIFICATION_TOKEN_EXPIRED
+            - EMAIL_ALREADY_VERIFIED
+            - EMAIL_NOT_VERIFIED
+            - TOO_MANY_REQUESTS
+            - NOT_FOUND
+            - INTERNAL_ERROR
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }

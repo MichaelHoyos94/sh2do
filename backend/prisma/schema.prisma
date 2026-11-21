@@ -1,0 +1,96 @@
+// Fiel a docs/sh2do-model.json. Solo las tablas que usa STD-6; las demás las añade su feature.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum EmailKind {
+  verify_email
+  reset_password
+  reminder
+  plan_updated
+  plan_cancelled
+}
+
+enum EmailStatus {
+  queued
+  accepted
+  failed
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique @db.VarChar(254)
+  passwordHash    String    @map("password_hash") @db.VarChar(255)
+  displayName     String?   @map("display_name") @db.VarChar(100)
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  timezone        String    @db.VarChar(64)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  sessions           UserSession[]
+  verificationTokens EmailVerificationToken[]
+  emailDeliveries    EmailDelivery[]
+
+  @@index([emailVerifiedAt], map: "idx_users_verified")
+  @@map("users")
+}
+
+model UserSession {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @map("user_id")
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.VarChar(64)
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  lastUsedAt       DateTime? @map("last_used_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_sessions_user")
+  @@index([expiresAt], map: "idx_sessions_expiry")
+  @@map("user_sessions")
+}
+
+model EmailVerificationToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_email_tokens_user")
+  @@map("email_verification_tokens")
+}
+
+model EmailDelivery {
+  id                Int         @id @default(autoincrement())
+  userId            Int         @map("user_id")
+  // Sin relación hasta que exista `notifications` (STD-16 añade la FK).
+  notificationId    Int?        @map("notification_id")
+  kind              EmailKind
+  recipientEmail    String      @map("recipient_email") @db.VarChar(254)
+  dedupeKey         String      @unique @map("dedupe_key") @db.VarChar(160)
+  status            EmailStatus @default(queued)
+  attemptCount      Int         @default(0) @map("attempt_count")
+  providerMessageId String?     @map("provider_message_id") @db.VarChar(200)
+  lastError         String?     @map("last_error") @db.Text
+  createdAt         DateTime    @default(now()) @map("created_at")
+  processedAt       DateTime?   @map("processed_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([status, createdAt], map: "idx_email_deliveries_status")
+  @@index([userId], map: "idx_email_deliveries_user")
+  @@map("email_deliveries")
+}

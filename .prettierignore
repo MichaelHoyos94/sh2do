@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+package-lock.json
+backend/src/generated
+backend/prisma/migrations
+frontend/src/api/generated
+features
+docs
+.claude
+.agents

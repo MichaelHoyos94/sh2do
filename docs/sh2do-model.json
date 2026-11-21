@@ -1,0 +1,2879 @@
+{
+  "tables": [
+    {
+      "id": 1,
+      "name": "users",
+      "x": -650.1618216762263,
+      "y": 93.65407294954946,
+      "width": 274,
+      "color": "#4873A6",
+      "comment": "Cuenta y zona horaria del usuario. Hash seguro, nunca contraseña legible.",
+      "fields": [
+        {
+          "id": 1001,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1002,
+          "name": "email",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "Correo normalizado en minúsculas",
+          "size": "254"
+        },
+        {
+          "id": 1003,
+          "name": "password_hash",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "255"
+        },
+        {
+          "id": 1004,
+          "name": "display_name",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "size": "100"
+        },
+        {
+          "id": 1005,
+          "name": "email_verified_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1006,
+          "name": "timezone",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "Identificador IANA de zona horaria",
+          "size": "64"
+        },
+        {
+          "id": 1007,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1008,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_users_verified",
+          "unique": false,
+          "fields": [
+            "email_verified_at"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 2,
+      "name": "user_preferences",
+      "x": -1184.990079098484,
+      "y": -303.0733065978968,
+      "width": 274,
+      "color": "#4873A6",
+      "comment": "Preferencias de correo para recordatorios; los avisos críticos de planes se mantienen.",
+      "fields": [
+        {
+          "id": 1009,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1010,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1011,
+          "name": "email_reminders_enabled",
+          "type": "BOOLEAN",
+          "default": "1",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1012,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1013,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [],
+      "uniqueConstraints": [
+        {
+          "id": 0,
+          "name": "uq_user_preferences_user",
+          "fields": [
+            "user_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "user_sessions",
+      "x": -1319.71496861954,
+      "y": 237.05768365271467,
+      "width": 274,
+      "color": "#4873A6",
+      "comment": "Sesiones con token de refresco almacenado como hash.",
+      "fields": [
+        {
+          "id": 1014,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1015,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1016,
+          "name": "refresh_token_hash",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1017,
+          "name": "expires_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1018,
+          "name": "revoked_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1019,
+          "name": "last_used_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1020,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_sessions_user",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        },
+        {
+          "id": 1,
+          "name": "idx_sessions_expiry",
+          "unique": false,
+          "fields": [
+            "expires_at"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 4,
+      "name": "email_verification_tokens",
+      "x": -1132.215210141188,
+      "y": 754.4819276025356,
+      "width": 274,
+      "color": "#4873A6",
+      "comment": "Verificaciones de correo de un solo uso.",
+      "fields": [
+        {
+          "id": 1021,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1022,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1023,
+          "name": "token_hash",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1024,
+          "name": "expires_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1025,
+          "name": "used_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1026,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_email_tokens_user",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 5,
+      "name": "password_reset_tokens",
+      "x": -339.7637368343469,
+      "y": -460.7421979765603,
+      "width": 274,
+      "color": "#4873A6",
+      "comment": "Recuperación de contraseña de un solo uso.",
+      "fields": [
+        {
+          "id": 1027,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1028,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1029,
+          "name": "token_hash",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1030,
+          "name": "expires_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1031,
+          "name": "used_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1032,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_reset_tokens_user",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 6,
+      "name": "tasks",
+      "x": 33.540567667772734,
+      "y": 70.65781904264091,
+      "width": 274,
+      "color": "#36A27C",
+      "comment": "Definición de pendiente personal; el estado y programación están en task_occurrences.",
+      "fields": [
+        {
+          "id": 1033,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1034,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1035,
+          "name": "title",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "200"
+        },
+        {
+          "id": 1036,
+          "name": "description",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1037,
+          "name": "priority",
+          "type": "ENUM",
+          "default": "medium",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "id": 1038,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1039,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_tasks_owner",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 7,
+      "name": "tags",
+      "x": -571.7868500345778,
+      "y": 727.8741520140784,
+      "width": 274,
+      "color": "#36A27C",
+      "comment": "Etiquetas personales; unicidad por usuario y nombre normalizado.",
+      "fields": [
+        {
+          "id": 1040,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1041,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1042,
+          "name": "name",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "60"
+        },
+        {
+          "id": 1043,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_tags_owner",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "id": 0,
+          "name": "uq_tags_user_name",
+          "fields": [
+            "user_id",
+            "name"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "task_tags",
+      "x": -40.855529837931044,
+      "y": 554.8103763665247,
+      "width": 274,
+      "color": "#36A27C",
+      "comment": "Relación N:M entre pendientes y etiquetas. Validar que ambos pertenezcan al mismo usuario.",
+      "fields": [
+        {
+          "id": 1044,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1045,
+          "name": "task_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a tasks.id"
+        },
+        {
+          "id": 1046,
+          "name": "tag_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a tags.id"
+        },
+        {
+          "id": 1047,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_task_tags_tag",
+          "unique": false,
+          "fields": [
+            "tag_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "id": 0,
+          "name": "uq_task_tag_pair",
+          "fields": [
+            "task_id",
+            "tag_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "recurrence_rules",
+      "x": -18.53876040009277,
+      "y": 1128.190207722326,
+      "width": 274,
+      "color": "#1B8F86",
+      "comment": "Una serie puede dividirse en segmentos al editar «esta y las futuras». ends_before es exclusivo.",
+      "fields": [
+        {
+          "id": 1048,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1049,
+          "name": "task_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a tasks.id"
+        },
+        {
+          "id": 1050,
+          "name": "frequency",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "daily",
+            "weekly",
+            "monthly"
+          ]
+        },
+        {
+          "id": 1051,
+          "name": "starts_on",
+          "type": "DATE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1052,
+          "name": "ends_before",
+          "type": "DATE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1053,
+          "name": "anchor_day_of_month",
+          "type": "TINYINT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "Día ancla 1..31; mes corto = último día"
+        },
+        {
+          "id": 1054,
+          "name": "time_of_day",
+          "type": "TIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1055,
+          "name": "timezone",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1056,
+          "name": "title_override",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "Cambios de título para este segmento de serie",
+          "size": "200"
+        },
+        {
+          "id": 1057,
+          "name": "description_override",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1058,
+          "name": "priority_override",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "id": 1059,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_rules_task_dates",
+          "unique": false,
+          "fields": [
+            "task_id",
+            "starts_on"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 10,
+      "name": "task_occurrences",
+      "x": 601.6156724047172,
+      "y": 870.0070457107893,
+      "width": 274,
+      "color": "#1B8F86",
+      "comment": "Cada tarea simple tiene una ocurrencia (sequence_no=0); series se materializan por horizonte. Estado independiente.",
+      "fields": [
+        {
+          "id": 1060,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1061,
+          "name": "task_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a tasks.id"
+        },
+        {
+          "id": 1062,
+          "name": "recurrence_rule_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a recurrence_rules.id"
+        },
+        {
+          "id": 1063,
+          "name": "sequence_no",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "0 para no recurrente; contador estable para series"
+        },
+        {
+          "id": 1064,
+          "name": "original_date",
+          "type": "DATE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1065,
+          "name": "scheduled_date",
+          "type": "DATE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1066,
+          "name": "scheduled_time",
+          "type": "TIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1067,
+          "name": "timezone",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1068,
+          "name": "scheduled_at_utc",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1069,
+          "name": "status",
+          "type": "ENUM",
+          "default": "pending",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "pending",
+            "in_progress",
+            "completed"
+          ]
+        },
+        {
+          "id": 1070,
+          "name": "title_override",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "size": "200"
+        },
+        {
+          "id": 1071,
+          "name": "description_override",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1072,
+          "name": "priority_override",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        {
+          "id": 1073,
+          "name": "reminders_overridden",
+          "type": "BOOLEAN",
+          "default": "0",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "Si 1, usar recordatorios de ocurrencia y no la plantilla de serie"
+        },
+        {
+          "id": 1074,
+          "name": "completed_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1075,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1076,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_occ_user_calendar",
+          "unique": false,
+          "fields": [
+            "scheduled_date",
+            "status"
+          ]
+        },
+        {
+          "id": 1,
+          "name": "idx_occ_rule",
+          "unique": false,
+          "fields": [
+            "recurrence_rule_id"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "idx_occ_due",
+          "unique": false,
+          "fields": [
+            "scheduled_at_utc"
+          ]
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "id": 0,
+          "name": "uq_task_occ_sequence",
+          "fields": [
+            "task_id",
+            "sequence_no"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "plans",
+      "x": 1241.4620119412245,
+      "y": -161.1274433250311,
+      "width": 274,
+      "color": "#A477C4",
+      "comment": "La condición histórica se deriva de starts_at_utc y estado; no requiere job de archivado.",
+      "fields": [
+        {
+          "id": 1077,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1078,
+          "name": "created_by_user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1079,
+          "name": "title",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "200"
+        },
+        {
+          "id": 1080,
+          "name": "description",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1081,
+          "name": "notes",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1082,
+          "name": "location_text",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "size": "255"
+        },
+        {
+          "id": 1083,
+          "name": "start_local_date",
+          "type": "DATE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1084,
+          "name": "start_local_time",
+          "type": "TIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1085,
+          "name": "timezone",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1086,
+          "name": "starts_at_utc",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1087,
+          "name": "status",
+          "type": "ENUM",
+          "default": "active",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "active",
+            "cancelled"
+          ]
+        },
+        {
+          "id": 1088,
+          "name": "cancelled_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1089,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1090,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_plans_creator",
+          "unique": false,
+          "fields": [
+            "created_by_user_id"
+          ]
+        },
+        {
+          "id": 1,
+          "name": "idx_plans_schedule",
+          "unique": false,
+          "fields": [
+            "starts_at_utc",
+            "status"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 12,
+      "name": "plan_share_links",
+      "x": 1766.9710100850314,
+      "y": -1142.803819016779,
+      "width": 274,
+      "color": "#A477C4",
+      "comment": "Enlaces de acceso; el token plano solo aparece en URL. Revocación sin afectar asistentes confirmados.",
+      "fields": [
+        {
+          "id": 1091,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1092,
+          "name": "plan_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a plans.id"
+        },
+        {
+          "id": 1093,
+          "name": "token_hash",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "64"
+        },
+        {
+          "id": 1094,
+          "name": "revoked_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1095,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_plan_links_plan",
+          "unique": false,
+          "fields": [
+            "plan_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 13,
+      "name": "plan_participants",
+      "x": 1098.019962513118,
+      "y": 1628.885000483878,
+      "width": 274,
+      "color": "#A477C4",
+      "comment": "Una respuesta vigente por usuario y plan. Responder requiere correo verificado.",
+      "fields": [
+        {
+          "id": 1096,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1097,
+          "name": "plan_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a plans.id"
+        },
+        {
+          "id": 1098,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1099,
+          "name": "rsvp_status",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "going",
+            "not_going"
+          ]
+        },
+        {
+          "id": 1100,
+          "name": "responded_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1101,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_participant_user_status",
+          "unique": false,
+          "fields": [
+            "user_id",
+            "rsvp_status"
+          ]
+        }
+      ],
+      "uniqueConstraints": [
+        {
+          "id": 0,
+          "name": "uq_plan_user",
+          "fields": [
+            "plan_id",
+            "user_id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "plan_change_events",
+      "x": 97.51870152824642,
+      "y": 1983.5878615888055,
+      "width": 274,
+      "color": "#A477C4",
+      "comment": "Auditoría de cambios importantes. Destinatarios se determinan al evento y se guardan en cola/salidas.",
+      "fields": [
+        {
+          "id": 1102,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1103,
+          "name": "plan_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a plans.id"
+        },
+        {
+          "id": 1104,
+          "name": "changed_by_user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1105,
+          "name": "event_type",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "updated",
+            "cancelled"
+          ]
+        },
+        {
+          "id": 1106,
+          "name": "changed_fields",
+          "type": "JSON",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "Lista de campos cambiados; solo fecha/hora/lugar/cancelación avisa"
+        },
+        {
+          "id": 1107,
+          "name": "before_data",
+          "type": "JSON",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1108,
+          "name": "after_data",
+          "type": "JSON",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1109,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_plan_events_plan",
+          "unique": false,
+          "fields": [
+            "plan_id",
+            "created_at"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 15,
+      "name": "reminder_settings",
+      "x": 1963.3465722158735,
+      "y": 545.9496031147886,
+      "width": 274,
+      "color": "#D18B43",
+      "comment": "CHECK lógico: exactamente una FK destino no nula. Hasta 3 por recurso/usuario. Plantilla vs sobrescritura por ocurrencia.",
+      "fields": [
+        {
+          "id": 1110,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1111,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1112,
+          "name": "task_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "Plantilla para todas las ocurrencias de una tarea recurrente"
+        },
+        {
+          "id": 1113,
+          "name": "task_occurrence_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "Recordatorio específico de una ocurrencia"
+        },
+        {
+          "id": 1114,
+          "name": "plan_participant_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "Recordatorio específico de participante Voy"
+        },
+        {
+          "id": 1115,
+          "name": "slot",
+          "type": "TINYINT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "Posición 1..3 por recurso; unicidad validada por servicio"
+        },
+        {
+          "id": 1116,
+          "name": "minutes_before",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "Anticipación en minutos >= 0"
+        },
+        {
+          "id": 1117,
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "default": "1",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1118,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1119,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_reminder_settings_user",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        },
+        {
+          "id": 1,
+          "name": "idx_reminder_settings_task",
+          "unique": false,
+          "fields": [
+            "task_id"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "idx_reminder_settings_occ",
+          "unique": false,
+          "fields": [
+            "task_occurrence_id"
+          ]
+        },
+        {
+          "id": 3,
+          "name": "idx_reminder_settings_part",
+          "unique": false,
+          "fields": [
+            "plan_participant_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 16,
+      "name": "scheduled_reminders",
+      "x": 1550.6780112147999,
+      "y": 376.4642146697132,
+      "width": 274,
+      "color": "#D18B43",
+      "comment": "Registro duradero para reconstruir trabajos BullMQ. Destino exactamente uno: ocurrencia o participante.",
+      "fields": [
+        {
+          "id": 1120,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1121,
+          "name": "reminder_setting_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a reminder_settings.id"
+        },
+        {
+          "id": 1122,
+          "name": "task_occurrence_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a task_occurrences.id"
+        },
+        {
+          "id": 1123,
+          "name": "plan_participant_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a plan_participants.id"
+        },
+        {
+          "id": 1124,
+          "name": "fire_at_utc",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1125,
+          "name": "status",
+          "type": "ENUM",
+          "default": "pending",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "pending",
+            "processing",
+            "sent",
+            "cancelled",
+            "failed"
+          ]
+        },
+        {
+          "id": 1126,
+          "name": "dedupe_key",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "160"
+        },
+        {
+          "id": 1127,
+          "name": "attempts",
+          "type": "INTEGER",
+          "default": "0",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1128,
+          "name": "last_attempt_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1129,
+          "name": "sent_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1130,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1131,
+          "name": "updated_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_scheduled_status_time",
+          "unique": false,
+          "fields": [
+            "status",
+            "fire_at_utc"
+          ]
+        },
+        {
+          "id": 1,
+          "name": "idx_scheduled_occurrence",
+          "unique": false,
+          "fields": [
+            "task_occurrence_id"
+          ]
+        },
+        {
+          "id": 2,
+          "name": "idx_scheduled_participant",
+          "unique": false,
+          "fields": [
+            "plan_participant_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 17,
+      "name": "notifications",
+      "x": 2150.6333909976843,
+      "y": -436.0964702071534,
+      "width": 274,
+      "color": "#C66F6F",
+      "comment": "Bandeja persistente. Cada aviso se relaciona con el evento que lo originó.",
+      "fields": [
+        {
+          "id": 1132,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1133,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1134,
+          "name": "plan_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a plans.id"
+        },
+        {
+          "id": 1135,
+          "name": "task_occurrence_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a task_occurrences.id"
+        },
+        {
+          "id": 1136,
+          "name": "scheduled_reminder_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a scheduled_reminders.id"
+        },
+        {
+          "id": 1137,
+          "name": "plan_change_event_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a plan_change_events.id"
+        },
+        {
+          "id": 1138,
+          "name": "kind",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "reminder",
+            "plan_updated",
+            "plan_cancelled"
+          ]
+        },
+        {
+          "id": 1139,
+          "name": "title",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "200"
+        },
+        {
+          "id": 1140,
+          "name": "body",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1141,
+          "name": "metadata",
+          "type": "JSON",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1142,
+          "name": "event_key",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "Clave idempotente por evento y destinatario",
+          "size": "160"
+        },
+        {
+          "id": 1143,
+          "name": "read_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1144,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_notifications_inbox",
+          "unique": false,
+          "fields": [
+            "user_id",
+            "read_at",
+            "created_at"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    },
+    {
+      "id": 18,
+      "name": "email_deliveries",
+      "x": 360.7747417227297,
+      "y": -826.5048744667181,
+      "width": 274,
+      "color": "#C66F6F",
+      "comment": "Registro de intentos al proveedor. accepted no garantiza entrega efectiva al buzón.",
+      "fields": [
+        {
+          "id": 1145,
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": true,
+          "comment": "Identificador interno"
+        },
+        {
+          "id": 1146,
+          "name": "user_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "FK a users.id"
+        },
+        {
+          "id": 1147,
+          "name": "notification_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "FK a notifications.id"
+        },
+        {
+          "id": 1148,
+          "name": "kind",
+          "type": "ENUM",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "verify_email",
+            "reset_password",
+            "reminder",
+            "plan_updated",
+            "plan_cancelled"
+          ]
+        },
+        {
+          "id": 1149,
+          "name": "recipient_email",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "254"
+        },
+        {
+          "id": 1150,
+          "name": "dedupe_key",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "size": "160"
+        },
+        {
+          "id": 1151,
+          "name": "status",
+          "type": "ENUM",
+          "default": "queued",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "values": [
+            "queued",
+            "accepted",
+            "failed"
+          ]
+        },
+        {
+          "id": 1152,
+          "name": "attempt_count",
+          "type": "INTEGER",
+          "default": "0",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1153,
+          "name": "provider_message_id",
+          "type": "VARCHAR",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "size": "200"
+        },
+        {
+          "id": 1154,
+          "name": "last_error",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1155,
+          "name": "created_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": ""
+        },
+        {
+          "id": 1156,
+          "name": "processed_at",
+          "type": "DATETIME",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": ""
+        }
+      ],
+      "indices": [
+        {
+          "id": 0,
+          "name": "idx_email_deliveries_status",
+          "unique": false,
+          "fields": [
+            "status",
+            "created_at"
+          ]
+        },
+        {
+          "id": 1,
+          "name": "idx_email_deliveries_user",
+          "unique": false,
+          "fields": [
+            "user_id"
+          ]
+        }
+      ],
+      "uniqueConstraints": []
+    }
+  ],
+  "relationships": [
+    {
+      "id": 2001,
+      "name": "fk_user_preferences_user_id",
+      "startTableId": 2,
+      "startFieldId": 1010,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "one_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2002,
+      "name": "fk_user_sessions_user_id",
+      "startTableId": 3,
+      "startFieldId": 1015,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2003,
+      "name": "fk_email_verification_tokens_user_id",
+      "startTableId": 4,
+      "startFieldId": 1022,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2004,
+      "name": "fk_password_reset_tokens_user_id",
+      "startTableId": 5,
+      "startFieldId": 1028,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2005,
+      "name": "fk_tasks_user_id",
+      "startTableId": 6,
+      "startFieldId": 1034,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2006,
+      "name": "fk_tags_user_id",
+      "startTableId": 7,
+      "startFieldId": 1041,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2007,
+      "name": "fk_task_tags_task_id",
+      "startTableId": 8,
+      "startFieldId": 1045,
+      "endTableId": 6,
+      "endFieldId": 1033,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2008,
+      "name": "fk_task_tags_tag_id",
+      "startTableId": 8,
+      "startFieldId": 1046,
+      "endTableId": 7,
+      "endFieldId": 1040,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2009,
+      "name": "fk_recurrence_rules_task_id",
+      "startTableId": 9,
+      "startFieldId": 1049,
+      "endTableId": 6,
+      "endFieldId": 1033,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2010,
+      "name": "fk_task_occurrences_task_id",
+      "startTableId": 10,
+      "startFieldId": 1061,
+      "endTableId": 6,
+      "endFieldId": 1033,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2011,
+      "name": "fk_task_occurrences_recurrence_rule_id",
+      "startTableId": 10,
+      "startFieldId": 1062,
+      "endTableId": 9,
+      "endFieldId": 1048,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Set null"
+    },
+    {
+      "id": 2012,
+      "name": "fk_plans_created_by_user_id",
+      "startTableId": 11,
+      "startFieldId": 1078,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Restrict"
+    },
+    {
+      "id": 2013,
+      "name": "fk_plan_share_links_plan_id",
+      "startTableId": 12,
+      "startFieldId": 1092,
+      "endTableId": 11,
+      "endFieldId": 1077,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2014,
+      "name": "fk_plan_participants_plan_id",
+      "startTableId": 13,
+      "startFieldId": 1097,
+      "endTableId": 11,
+      "endFieldId": 1077,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2015,
+      "name": "fk_plan_participants_user_id",
+      "startTableId": 13,
+      "startFieldId": 1098,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Restrict"
+    },
+    {
+      "id": 2016,
+      "name": "fk_plan_change_events_plan_id",
+      "startTableId": 14,
+      "startFieldId": 1103,
+      "endTableId": 11,
+      "endFieldId": 1077,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2017,
+      "name": "fk_plan_change_events_changed_by_user_id",
+      "startTableId": 14,
+      "startFieldId": 1104,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Restrict"
+    },
+    {
+      "id": 2018,
+      "name": "fk_reminder_settings_user_id",
+      "startTableId": 15,
+      "startFieldId": 1111,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2019,
+      "name": "fk_reminder_settings_task_id",
+      "startTableId": 15,
+      "startFieldId": 1112,
+      "endTableId": 6,
+      "endFieldId": 1033,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2020,
+      "name": "fk_reminder_settings_task_occurrence_id",
+      "startTableId": 15,
+      "startFieldId": 1113,
+      "endTableId": 10,
+      "endFieldId": 1060,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2021,
+      "name": "fk_reminder_settings_plan_participant_id",
+      "startTableId": 15,
+      "startFieldId": 1114,
+      "endTableId": 13,
+      "endFieldId": 1096,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2022,
+      "name": "fk_scheduled_reminders_reminder_setting_id",
+      "startTableId": 16,
+      "startFieldId": 1121,
+      "endTableId": 15,
+      "endFieldId": 1110,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2023,
+      "name": "fk_scheduled_reminders_task_occurrence_id",
+      "startTableId": 16,
+      "startFieldId": 1122,
+      "endTableId": 10,
+      "endFieldId": 1060,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2024,
+      "name": "fk_scheduled_reminders_plan_participant_id",
+      "startTableId": 16,
+      "startFieldId": 1123,
+      "endTableId": 13,
+      "endFieldId": 1096,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2025,
+      "name": "fk_notifications_user_id",
+      "startTableId": 17,
+      "startFieldId": 1133,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2026,
+      "name": "fk_notifications_plan_id",
+      "startTableId": 17,
+      "startFieldId": 1134,
+      "endTableId": 11,
+      "endFieldId": 1077,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Set null"
+    },
+    {
+      "id": 2027,
+      "name": "fk_notifications_task_occurrence_id",
+      "startTableId": 17,
+      "startFieldId": 1135,
+      "endTableId": 10,
+      "endFieldId": 1060,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Set null"
+    },
+    {
+      "id": 2028,
+      "name": "fk_notifications_scheduled_reminder_id",
+      "startTableId": 17,
+      "startFieldId": 1136,
+      "endTableId": 16,
+      "endFieldId": 1120,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Set null"
+    },
+    {
+      "id": 2029,
+      "name": "fk_notifications_plan_change_event_id",
+      "startTableId": 17,
+      "startFieldId": 1137,
+      "endTableId": 14,
+      "endFieldId": 1102,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Set null"
+    },
+    {
+      "id": 2030,
+      "name": "fk_email_deliveries_user_id",
+      "startTableId": 18,
+      "startFieldId": 1146,
+      "endTableId": 1,
+      "endFieldId": 1001,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "id": 2031,
+      "name": "fk_email_deliveries_notification_id",
+      "startTableId": 18,
+      "startFieldId": 1147,
+      "endTableId": 17,
+      "endFieldId": 1132,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Cascade",
+      "deleteConstraint": "Set null"
+    }
+  ],
+  "notes": [
+    {
+      "id": 1,
+      "x": -768.9314032471067,
+      "y": -463.1033706859307,
+      "width": 260,
+      "height": 138,
+      "title": "Diseño sh2do MVP",
+      "content": "ER lógico para MySQL 8 + Prisma. Colores: cuentas, pendientes, recurrencias, planes, recordatorios, notificaciones.",
+      "color": "#DCE9F5"
+    },
+    {
+      "id": 2,
+      "x": 54.90162592003708,
+      "y": -184.22689939880573,
+      "width": 260,
+      "height": 210,
+      "title": "Recurrencias",
+      "content": "Serie en recurrence_rules; instancias reales en task_occurrences. «Esta y futuras» divide la regla en segmentos. Materializar por horizonte; conservar estado pasado.",
+      "color": "#D8F4E9"
+    },
+    {
+      "id": 3,
+      "x": 2290.3425304088523,
+      "y": 429.4552423330458,
+      "width": 260,
+      "height": 186,
+      "title": "Recordatorios",
+      "content": "MySQL es la fuente de verdad; BullMQ solo ejecuta los jobs. reminder_settings define anticipaciones y scheduled_reminders materializa cada envío.",
+      "color": "#FFF0DA"
+    },
+    {
+      "id": 4,
+      "x": 1474.470160956398,
+      "y": 2029.598631988788,
+      "width": 260,
+      "height": 234,
+      "title": "Restricciones lógicas",
+      "content": "En reminder_settings exactamente una de task_id, task_occurrence_id o plan_participant_id debe ser no NULL. En scheduled_reminders exactamente un destino. Máximo 3 slots; incluir CHECK o validación en servicio.",
+      "color": "#F7EDFC"
+    },
+    {
+      "id": 5,
+      "x": 1950,
+      "y": 1290,
+      "width": 260,
+      "height": 186,
+      "title": "Notificación importante",
+      "content": "Capturar destinatarios con respuesta «Voy» al momento del cambio; crear notificaciones y envíos de correo en transacción para evitar cambios de lista durante los reintentos.",
+      "color": "#FCEAEA"
+    }
+  ],
+  "subjectAreas": [],
+  "views": [],
+  "database": "mysql",
+  "title": "sh2do — MER MVP v1.0"
+}

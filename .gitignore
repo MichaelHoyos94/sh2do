@@ -1,0 +1,30 @@
+# Dependencias y builds
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Pruebas
+coverage/
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Claude Code (configuración local)
+.claude/settings.local.json
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Cliente de Prisma generado
+backend/src/generated/
