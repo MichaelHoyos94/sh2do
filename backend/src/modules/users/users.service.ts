@@ -24,6 +24,9 @@ export const usersService = {
 
   findById: (id: number) => usersRepository.findById(id),
 
+  updatePassword: (id: number, passwordHash: string, db?: Db) =>
+    usersRepository.updatePassword(id, passwordHash, db),
+
   markEmailVerified: (id: number, at: Date, db?: Db) =>
     usersRepository.markEmailVerified(id, at, db),
 

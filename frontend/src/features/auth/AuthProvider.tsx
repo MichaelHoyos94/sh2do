@@ -13,6 +13,8 @@ type AuthContextValue = {
   logout: () => Promise<void>;
   resendVerification: () => Promise<void>;
   markEmailVerified: () => void;
+  /** Limpia la sesión local sin llamar a /auth/logout (el servidor ya la cerró). */
+  clearSession: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
       markEmailVerified: () => setUser((current) => current && { ...current, emailVerified: true }),
+      clearSession,
     }),
     [loading, user, clearSession],
   );

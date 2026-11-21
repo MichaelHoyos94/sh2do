@@ -22,6 +22,6 @@ export const sessionRepository = {
       data: { revokedAt: at },
     }),
 
-  revokeAllForUser: (userId: number, at: Date) =>
-    prisma.userSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: at } }),
+  revokeAllForUser: (userId: number, at: Date, db: Db = prisma) =>
+    db.userSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: at } }),
 };

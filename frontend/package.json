@@ -35,7 +35,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "gen:api": "openapi-typescript ../features/STD-6-registro-inicio-sesion/contracts/openapi.yaml -o src/api/generated/std-6.ts"
+    "lint": "eslint . && prettier --check . --ignore-path ../.prettierignore --log-level warn",
+    "gen:api": "openapi-typescript ../features/STD-6-registro-inicio-sesion/contracts/openapi.yaml -o src/api/generated/std-6.ts && openapi-typescript ../features/STD-7-recuperar-contrasena/contracts/openapi.yaml -o src/api/generated/std-7.ts"
   }
 }

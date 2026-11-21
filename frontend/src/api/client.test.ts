@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { empty, json, makeSession, mockApi, problem } from '@/test/utils';
-import { ApiError, describeError, refreshSession, request, setAccessToken, setSessionLostHandler } from './client';
+import {
+  ApiError,
+  describeError,
+  refreshSession,
+  request,
+  setAccessToken,
+  setSessionLostHandler,
+} from './client';
 
 describe('request', () => {
   it('envía el access token en memoria como Bearer', async () => {
@@ -17,7 +24,9 @@ describe('request', () => {
     mockApi({
       'POST /auth/refresh': refresh,
       'GET /users/me': ({ headers }) =>
-        headers.get('Authorization') === 'Bearer new' ? json(200, { id: 1 }) : problem(401, 'UNAUTHENTICATED', 'Vencido.'),
+        headers.get('Authorization') === 'Bearer new'
+          ? json(200, { id: 1 })
+          : problem(401, 'UNAUTHENTICATED', 'Vencido.'),
     });
     setAccessToken('old');
 
@@ -39,25 +48,35 @@ describe('request', () => {
     setSessionLostHandler(lost);
     setAccessToken('old');
 
-    await expect(request('GET', '/users/me', { auth: true })).rejects.toMatchObject({ status: 401 });
+    await expect(request('GET', '/users/me', { auth: true })).rejects.toMatchObject({
+      status: 401,
+    });
     expect(lost).toHaveBeenCalledTimes(1);
   });
 
   it('no intenta renovar la sesión en endpoints públicos (p. ej. credenciales incorrectas)', async () => {
     const fetchMock = mockApi({
-      'POST /auth/login': () => problem(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos.'),
+      'POST /auth/login': () =>
+        problem(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos.'),
     });
-    await expect(request('POST', '/auth/login', { body: {} })).rejects.toMatchObject({ code: 'INVALID_CREDENTIALS' });
+    await expect(request('POST', '/auth/login', { body: {} })).rejects.toMatchObject({
+      code: 'INVALID_CREDENTIALS',
+    });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('convierte Problem Details en ApiError con errores por campo y Retry-After', async () => {
     mockApi({
       'POST /auth/register': () =>
-        problem(422, 'VALIDATION_ERROR', 'Revisa los campos.', { errors: [{ field: 'email', message: 'Inválido.' }] }),
-      'POST /auth/login': () => problem(429, 'TOO_MANY_REQUESTS', 'Demasiados intentos.', {}, { 'Retry-After': '90' }),
+        problem(422, 'VALIDATION_ERROR', 'Revisa los campos.', {
+          errors: [{ field: 'email', message: 'Inválido.' }],
+        }),
+      'POST /auth/login': () =>
+        problem(429, 'TOO_MANY_REQUESTS', 'Demasiados intentos.', {}, { 'Retry-After': '90' }),
     });
-    const validation = await request('POST', '/auth/register', { body: {} }).catch((e: ApiError) => e);
+    const validation = await request('POST', '/auth/register', { body: {} }).catch(
+      (e: ApiError) => e,
+    );
     expect(validation).toMatchObject({
       status: 422,
       code: 'VALIDATION_ERROR',
@@ -81,7 +100,10 @@ describe('request', () => {
 
   it('serializa el refresh entre pestañas con navigator.locks', async () => {
     const lockRequest = vi.fn(<T>(_name: string, callback: () => Promise<T>) => callback());
-    Object.defineProperty(navigator, 'locks', { value: { request: lockRequest }, configurable: true });
+    Object.defineProperty(navigator, 'locks', {
+      value: { request: lockRequest },
+      configurable: true,
+    });
     try {
       const refresh = vi.fn(() => json(200, makeSession({}, 'locked')));
       mockApi({ 'POST /auth/refresh': refresh });
@@ -102,13 +124,18 @@ describe('request', () => {
       'GET /users/me': ({ headers }) => json(200, { auth: headers.get('Authorization') }),
     });
     await refreshSession();
-    await expect(request('GET', '/users/me', { auth: true })).resolves.toEqual({ auth: 'Bearer fresh' });
+    await expect(request('GET', '/users/me', { auth: true })).resolves.toEqual({
+      auth: 'Bearer fresh',
+    });
   });
 });
 
 describe('describeError', () => {
-  const err = (status: number, message = 'Detalle del servidor.', retryAfter: number | null = null) =>
-    new ApiError(status, message, 'UNKNOWN', [], retryAfter);
+  const err = (
+    status: number,
+    message = 'Detalle del servidor.',
+    retryAfter: number | null = null,
+  ) => new ApiError(status, message, 'UNKNOWN', [], retryAfter);
 
   it('muestra mensajes claros en español por código HTTP', () => {
     expect(describeError(err(401))).toBe('Detalle del servidor.');

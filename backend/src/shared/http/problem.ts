@@ -8,6 +8,8 @@ export type ProblemCode =
   | 'VERIFICATION_TOKEN_EXPIRED'
   | 'EMAIL_ALREADY_VERIFIED'
   | 'EMAIL_NOT_VERIFIED'
+  | 'PASSWORD_RESET_TOKEN_INVALID'
+  | 'PASSWORD_RESET_TOKEN_EXPIRED'
   | 'TOO_MANY_REQUESTS'
   | 'NOT_FOUND'
   | 'INTERNAL_ERROR';
@@ -22,6 +24,8 @@ const DEFAULTS: Record<ProblemCode, { status: number; title: string }> = {
   VERIFICATION_TOKEN_EXPIRED: { status: 400, title: 'Enlace de verificación vencido' },
   EMAIL_ALREADY_VERIFIED: { status: 409, title: 'Correo ya verificado' },
   EMAIL_NOT_VERIFIED: { status: 403, title: 'Correo sin verificar' },
+  PASSWORD_RESET_TOKEN_INVALID: { status: 400, title: 'Enlace de recuperación no válido' },
+  PASSWORD_RESET_TOKEN_EXPIRED: { status: 400, title: 'Enlace vencido' },
   TOO_MANY_REQUESTS: { status: 429, title: 'Demasiados intentos' },
   NOT_FOUND: { status: 404, title: 'No encontrado' },
   INTERNAL_ERROR: { status: 500, title: 'Error interno' },

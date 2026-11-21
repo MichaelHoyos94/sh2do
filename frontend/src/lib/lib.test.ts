@@ -7,9 +7,12 @@ describe('safeRedirect', () => {
     expect(safeRedirect('/plans/3?x=1')).toBe('/plans/3?x=1');
   });
 
-  it.each([null, '', 'https://evil.com', '//evil.com', '/\\evil.com', 'plans'])('rechaza %j y vuelve a /', (value) => {
-    expect(safeRedirect(value)).toBe('/');
-  });
+  it.each([null, '', 'https://evil.com', '//evil.com', '/\\evil.com', 'plans'])(
+    'rechaza %j y vuelve a /',
+    (value) => {
+      expect(safeRedirect(value)).toBe('/');
+    },
+  );
 });
 
 describe('withRedirect', () => {

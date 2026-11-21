@@ -7,7 +7,8 @@ export const EMAIL_QUEUE = 'email';
 /** El token en claro solo viaja aquí; se descarta al terminar el job (no se guarda en MySQL). */
 export interface SendEmailJob {
   deliveryId: number;
-  token: string;
+  /** Solo los correos con enlace (verificación y recuperación) llevan token. */
+  token?: string;
   displayName: string;
 }
 

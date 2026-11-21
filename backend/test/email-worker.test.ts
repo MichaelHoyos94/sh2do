@@ -157,3 +157,119 @@ describe('reconcileEmailDeliveries', () => {
     expect(queue.getJob).not.toHaveBeenCalled();
   });
 });
+
+async function createResetDelivery(
+  kind: 'reset_password' | 'password_changed',
+  createdAt = new Date(),
+) {
+  const user = await prisma.user.create({
+    data: { email: 'ana@example.com', passwordHash: 'x', displayName: 'Ana', timezone: 'UTC' },
+  });
+  const token = await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: 'r'.repeat(64),
+      expiresAt: new Date(Date.now() + 3600_000),
+    },
+  });
+  const delivery = await prisma.emailDelivery.create({
+    data: {
+      userId: user.id,
+      kind,
+      recipientEmail: user.email,
+      dedupeKey: `${kind}:${token.id}`,
+      createdAt,
+    },
+  });
+  return Object.assign(delivery, { tokenId: token.id });
+}
+
+const okTransport = () => ({ sendMail: vi.fn().mockResolvedValue({ messageId: '<m@mailpit>' }) });
+
+describe('processEmailJob: password recovery emails', () => {
+  it('CA-01: sends the reset link', async () => {
+    const delivery = await createResetDelivery('reset_password');
+    const transport = okTransport();
+
+    await processEmailJob(jobFor(delivery.id), transport);
+
+    const sent = transport.sendMail.mock.calls[0]![0];
+    expect(sent.subject).toBe('Restablece tu contraseña de Sh2do');
+    expect(sent.text).toContain('/reset-password?token=abc123');
+    expect(
+      (await prisma.emailDelivery.findUniqueOrThrow({ where: { id: delivery.id } })).status,
+    ).toBe('accepted');
+  });
+
+  it('CA-03: does not send a reset link that was voided and marks it as superseded', async () => {
+    const delivery = await createResetDelivery('reset_password');
+    await prisma.passwordResetToken.update({
+      where: { id: delivery.tokenId },
+      data: { usedAt: new Date() },
+    });
+    const transport = okTransport();
+
+    await processEmailJob(jobFor(delivery.id), transport);
+
+    expect(transport.sendMail).not.toHaveBeenCalled();
+    expect(
+      await prisma.emailDelivery.findUniqueOrThrow({ where: { id: delivery.id } }),
+    ).toMatchObject({ status: 'failed', lastError: 'superseded' });
+  });
+
+  it('CA-09: sends the password changed notice without a link or a token', async () => {
+    const delivery = await createResetDelivery('password_changed');
+    const transport = okTransport();
+
+    await processEmailJob(
+      { ...jobFor(delivery.id), data: { deliveryId: delivery.id, displayName: 'Ana' } },
+      transport,
+    );
+
+    const sent = transport.sendMail.mock.calls[0]![0];
+    expect(sent.subject).toBe('Tu contraseña de Sh2do cambió');
+    expect(sent.text).not.toContain('http');
+    expect(sent.html).not.toContain('<a ');
+  });
+
+  it('fails a link email whose job carries no token', async () => {
+    const delivery = await createResetDelivery('reset_password');
+
+    await expect(
+      processEmailJob(
+        { ...jobFor(delivery.id), data: { deliveryId: delivery.id, displayName: 'Ana' } },
+        okTransport(),
+      ),
+    ).rejects.toThrow('Missing token');
+  });
+});
+
+describe('reconcileEmailDeliveries: password changed notice', () => {
+  it('CA-09: requeues a password_changed delivery that lost its job instead of failing it', async () => {
+    const delivery = await createResetDelivery(
+      'password_changed',
+      new Date(Date.now() - 5 * 60_000),
+    );
+    const enqueue = vi.fn().mockResolvedValue(undefined);
+
+    const failed = await reconcileEmailDeliveries({ getJob: vi.fn() } as never, enqueue);
+
+    expect(failed).toBe(0);
+    expect(enqueue).toHaveBeenCalledWith({ deliveryId: delivery.id, displayName: 'Ana' });
+    expect(
+      (await prisma.emailDelivery.findUniqueOrThrow({ where: { id: delivery.id } })).status,
+    ).toBe('queued');
+  });
+
+  it('still fails a reset_password delivery that lost its job', async () => {
+    const delivery = await createResetDelivery('reset_password', new Date(Date.now() - 5 * 60_000));
+    const enqueue = vi.fn();
+
+    expect(await reconcileEmailDeliveries({ getJob: vi.fn() } as never, enqueue)).toBe(1);
+
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(
+      await prisma.emailDelivery.findUniqueOrThrow({ where: { id: delivery.id } }),
+    ).toMatchObject({ status: 'failed', lastError: 'token unavailable' });
+  });
+});

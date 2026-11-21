@@ -58,6 +58,7 @@ Si necesitas un cambio en la configuración de la raíz (scripts o workspaces), 
   - Sin snapshots, sin probar detalles de implementación y sin E2E.
 - Antes de terminar, ejecuta lint, typecheck y las pruebas con cobertura del frontend, y corrige lo que falle.
 - No hagas commits salvo que el orquestador te lo pida.
+- **No ejecutes comandos git que cambien el árbol de trabajo** (`stash`, `checkout`, `switch`, `reset`, `restore`, `clean`, `merge`, `rebase`, `pull`): trabajas en paralelo con otro agente sobre el mismo árbol y le quitarías sus cambios. Solo puedes leer (`status`, `diff`, `log`, `show`).
 - **Diseño visual:** usa las skills de diseño del proyecto (`frontend-design`, `impeccable`) y las demas cuando la feature tenga UI significativa.
 
 ## Reporte final (en español)

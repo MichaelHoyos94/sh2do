@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useLocation, useSearchParams } from 'react-router';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { withRedirect } from '@/lib/redirect';
@@ -17,6 +17,7 @@ const FIELDS = Object.keys(LABELS);
 export function LoginPage() {
   const { login } = useAuth();
   const redirect = useSearchParams()[0].get('redirect');
+  const passwordChanged = (useLocation().state as { passwordChanged?: boolean } | null)?.passwordChanged;
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   useFocusFirstError(errors, FIELDS);
@@ -45,6 +46,11 @@ export function LoginPage() {
 
   return (
     <AuthShell title="Inicia sesión">
+      {passwordChanged && (
+        <Alert variant="success" role="status">
+          Tu contraseña se cambió. Inicia sesión con la nueva.
+        </Alert>
+      )}
       <form onSubmit={onSubmit} noValidate className="space-y-4">
         <ErrorSummary errors={errors} labels={LABELS} />
         {formError && (
@@ -54,6 +60,11 @@ export function LoginPage() {
         )}
         <FormField id="email" label="Correo electrónico" type="email" autoComplete="email" error={errors.email} />
         <FormField id="password" label="Contraseña" type="password" autoComplete="current-password" error={errors.password} />
+        <p className="text-sm">
+          <Link to="/forgot-password" className="font-semibold text-primary underline underline-offset-4">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
         <Button type="submit" className="w-full" disabled={mutation.isPending}>
           {mutation.isPending ? 'Entrando…' : 'Iniciar sesión'}
         </Button>

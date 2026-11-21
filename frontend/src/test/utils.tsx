@@ -25,7 +25,10 @@ export function mockApi(handlers: Record<string, Handler>) {
 }
 
 export const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...headers },
+  });
 
 export const empty = (status: number) => new Response(null, { status });
 
@@ -35,12 +38,27 @@ export const problem = (
   detail: string,
   extra: Record<string, unknown> = {},
   headers: Record<string, string> = {},
-) => json(status, { type: 'https://sh2do.app/problems/test', title: 'Error', status, code, detail, ...extra }, headers);
+) =>
+  json(
+    status,
+    { type: 'https://sh2do.app/problems/test', title: 'Error', status, code, detail, ...extra },
+    headers,
+  );
 
-export const makeSession = (user: Partial<AuthSession['user']> = {}, accessToken = 'token-1'): AuthSession => ({
+export const makeSession = (
+  user: Partial<AuthSession['user']> = {},
+  accessToken = 'token-1',
+): AuthSession => ({
   accessToken,
   accessTokenExpiresIn: 900,
-  user: { id: 1, displayName: 'Ana', email: 'ana@example.com', emailVerified: false, timezone: 'UTC', ...user },
+  user: {
+    id: 1,
+    displayName: 'Ana',
+    email: 'ana@example.com',
+    emailVerified: false,
+    timezone: 'UTC',
+    ...user,
+  },
 });
 
 /** Respuesta de /auth/refresh cuando no hay cookie de sesión válida. */

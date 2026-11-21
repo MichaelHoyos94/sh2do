@@ -56,3 +56,19 @@ export const resendVerificationEmail: RequestHandler = async (req, res) => {
   await authService.resendVerification(req.user!.id);
   res.status(202).end();
 };
+
+export const forgotPassword: RequestHandler = async (req, res) => {
+  await authService.requestPasswordReset(req.body, req.ip ?? 'unknown');
+  res.status(202).end();
+};
+
+export const checkPasswordResetToken: RequestHandler = async (req, res) => {
+  await authService.checkPasswordResetToken(req.body.token);
+  res.status(204).end();
+};
+
+export const resetPassword: RequestHandler = async (req, res) => {
+  await authService.resetPassword(req.body);
+  clearRefreshCookie(res); // todas las sesiones se revocaron: esta cookie ya no vale
+  res.status(204).end();
+};

@@ -28,7 +28,9 @@ describe('rutas y sesión', () => {
 
   it('muestra un estado de carga accesible mientras se restaura la sesión', async () => {
     let finishRefresh = (_response: Response) => {};
-    mockApi({ 'POST /auth/refresh': () => new Promise<Response>((resolve) => (finishRefresh = resolve)) });
+    mockApi({
+      'POST /auth/refresh': () => new Promise<Response>((resolve) => (finishRefresh = resolve)),
+    });
     renderApp('/');
 
     expect(await screen.findByRole('status')).toHaveTextContent('Cargando');
@@ -48,7 +50,10 @@ describe('rutas y sesión', () => {
   });
 
   it('CA-09: "Cerrar sesión" revoca la sesión, la limpia y lleva a /login', async () => {
-    const fetchMock = mockApi({ 'POST /auth/refresh': verifiedSession, 'POST /auth/logout': () => empty(204) });
+    const fetchMock = mockApi({
+      'POST /auth/refresh': verifiedSession,
+      'POST /auth/logout': () => empty(204),
+    });
     const { user, router } = renderApp('/');
     await screen.findByRole('heading', { name: 'Hola, Ana' });
 
@@ -56,6 +61,10 @@ describe('rutas y sesión', () => {
 
     expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/login');
-    expect(fetchMock.mock.calls.some(([url, init]) => url.endsWith('/auth/logout') && init?.method === 'POST')).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(
+        ([url, init]) => url.endsWith('/auth/logout') && init?.method === 'POST',
+      ),
+    ).toBe(true);
   });
 });

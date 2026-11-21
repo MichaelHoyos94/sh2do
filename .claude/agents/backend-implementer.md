@@ -60,6 +60,7 @@ Puedes modificar:
 - Código, identificadores y commits en inglés; textos de cara al usuario en español.
 - Antes de terminar, ejecuta lint, typecheck y las pruebas con cobertura del backend, y corrige lo que falle. Si la feature toca Docker, comprueba que `scripts/up.ps1` levanta la aplicación.
 - No hagas commits salvo que el orquestador te lo pida.
+- **No ejecutes comandos git que cambien el árbol de trabajo** (`stash`, `checkout`, `switch`, `reset`, `restore`, `clean`, `merge`, `rebase`, `pull`): trabajas en paralelo con otro agente sobre el mismo árbol y le quitarías sus cambios. Solo puedes leer (`status`, `diff`, `log`, `show`).
 
 ## Reporte final (en español)
 1. **Qué hiciste:** un resumen breve, y los IDs de las tareas de `task.md` que completaste.

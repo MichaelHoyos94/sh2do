@@ -52,7 +52,12 @@ async function toApiError(res: Response): Promise<ApiError> {
   }
 }
 
-async function send(method: string, path: string, body: unknown, withToken: boolean): Promise<Response> {
+async function send(
+  method: string,
+  path: string,
+  body: unknown,
+  withToken: boolean,
+): Promise<Response> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (withToken && accessToken) headers.Authorization = `Bearer ${accessToken}`;
@@ -64,7 +69,11 @@ async function send(method: string, path: string, body: unknown, withToken: bool
       credentials: 'same-origin',
     });
   } catch {
-    throw new ApiError(0, 'No se pudo conectar con el servidor. Revisa tu conexión.', 'NETWORK_ERROR');
+    throw new ApiError(
+      0,
+      'No se pudo conectar con el servidor. Revisa tu conexión.',
+      'NETWORK_ERROR',
+    );
   }
 }
 
@@ -82,7 +91,10 @@ async function callRefresh(): Promise<AuthSession> {
  */
 export function refreshSession(): Promise<AuthSession> {
   if (refreshInFlight) return refreshInFlight;
-  const run = async () => (navigator.locks ? await navigator.locks.request('sh2do-refresh', callRefresh) : await callRefresh());
+  const run = async () =>
+    navigator.locks
+      ? await navigator.locks.request('sh2do-refresh', callRefresh)
+      : await callRefresh();
   const shared = run().finally(() => {
     refreshInFlight = null;
   });
@@ -93,7 +105,11 @@ export function refreshSession(): Promise<AuthSession> {
 type RequestOptions = { body?: unknown; auth?: boolean };
 
 /** `auth: true` envía el Bearer y, ante un 401, renueva la sesión y reintenta una sola vez. */
-export async function request<T = void>(method: string, path: string, { body, auth = false }: RequestOptions = {}): Promise<T> {
+export async function request<T = void>(
+  method: string,
+  path: string,
+  { body, auth = false }: RequestOptions = {},
+): Promise<T> {
   let res = await send(method, path, body, auth);
   if (res.status === 401 && auth) {
     try {
