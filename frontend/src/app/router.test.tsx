@@ -21,9 +21,30 @@ describe('rutas y sesión', () => {
 
     for (const path of ['/login', '/register']) {
       await router.navigate(path);
-      await waitFor(() => expect(router.state.location.pathname).toBe('/'));
-      await waitFor(() => expect(screen.getByRole('heading', { name: 'Hola, Ana' })).toHaveFocus());
+      await waitFor(() => expect(router.state.location.pathname).toBe('/tasks'));
+      await waitFor(() =>
+        expect(screen.getByRole('heading', { name: 'Mis pendientes' })).toHaveFocus(),
+      );
     }
+  });
+
+  it('CA-09: sin sesión, /tasks redirige a /login?redirect=/tasks', async () => {
+    mockApi({ 'POST /auth/refresh': noSession });
+    const { router } = renderApp('/tasks');
+
+    expect(await screen.findByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument();
+    expect(new URLSearchParams(router.state.location.search).get('redirect')).toBe('/tasks');
+  });
+
+  it('con sesión, la cabecera enlaza a "Pendientes"', async () => {
+    mockApi({ 'POST /auth/refresh': verifiedSession });
+    const { user, router } = renderApp('/tasks/new');
+    await screen.findByRole('heading', { name: 'Nuevo pendiente' });
+
+    await user.click(screen.getByRole('link', { name: 'Pendientes' }));
+
+    expect(await screen.findByRole('heading', { name: 'Mis pendientes' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/tasks');
   });
 
   it('muestra un estado de carga accesible mientras se restaura la sesión', async () => {
@@ -44,8 +65,8 @@ describe('rutas y sesión', () => {
     mockApi({ 'POST /auth/refresh': verifiedSession });
     const { router } = renderApp('/');
 
-    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/');
+    expect(await screen.findByRole('heading', { name: 'Mis pendientes' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/tasks');
     expect(screen.queryByText('Verifica tu correo')).not.toBeInTheDocument();
   });
 
@@ -55,7 +76,7 @@ describe('rutas y sesión', () => {
       'POST /auth/logout': () => empty(204),
     });
     const { user, router } = renderApp('/');
-    await screen.findByRole('heading', { name: 'Hola, Ana' });
+    await screen.findByRole('heading', { name: 'Mis pendientes' });
 
     await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
 

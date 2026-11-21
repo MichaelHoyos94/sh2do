@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { VerifyEmailBanner } from '@/features/auth/VerifyEmailBanner';
@@ -22,7 +22,17 @@ export function AppLayout() {
       </a>
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-          <p className="text-xl font-extrabold tracking-tight text-primary">Sh2do</p>
+          <div className="flex items-center gap-6">
+            <p className="text-xl font-extrabold tracking-tight text-primary">Sh2do</p>
+            <nav aria-label="Principal">
+              <NavLink
+                to="/tasks"
+                className="text-sm font-semibold underline-offset-4 hover:underline aria-[current=page]:text-primary aria-[current=page]:underline"
+              >
+                Pendientes
+              </NavLink>
+            </nav>
+          </div>
           <div className="flex items-center gap-3">
             <span className="max-w-40 truncate text-sm sm:max-w-xs">{user?.displayName}</span>
             <Button variant="outline" onClick={onLogout}>

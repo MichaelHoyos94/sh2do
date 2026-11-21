@@ -25,7 +25,7 @@ describe('VerifyEmailPage', () => {
 
     await user.click(await screen.findByRole('link', { name: 'Continuar' }));
 
-    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Mis pendientes' })).toBeInTheDocument();
     expect(screen.queryByText('Verifica tu correo')).not.toBeInTheDocument();
   });
 
@@ -47,13 +47,17 @@ describe('VerifyEmailPage', () => {
   it('CA-04: un enlace inválido sin sesión invita a iniciar sesión', async () => {
     mockApi({
       'POST /auth/refresh': noSession,
-      'POST /auth/verify-email': () => problem(400, 'VERIFICATION_TOKEN_INVALID', 'El enlace no es válido o ya se usó.'),
+      'POST /auth/verify-email': () =>
+        problem(400, 'VERIFICATION_TOKEN_INVALID', 'El enlace no es válido o ya se usó.'),
     });
     renderApp('/verify-email?token=malo');
 
     expect(await screen.findByRole('heading', { name: 'Enlace no válido' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('ya se usó');
-    expect(await screen.findByRole('link', { name: 'Inicia sesión' })).toHaveAttribute('href', '/login');
+    expect(await screen.findByRole('link', { name: 'Inicia sesión' })).toHaveAttribute(
+      'href',
+      '/login',
+    );
   });
 
   it('sin token no llama a la API y explica el problema', async () => {
@@ -70,7 +74,10 @@ describe('VerifyEmailBanner', () => {
   const unverified = () => json(200, makeSession());
 
   it('CA-05: reenvía el correo y anuncia el resultado en una región aria-live', async () => {
-    mockApi({ 'POST /auth/refresh': unverified, 'POST /auth/verification-email': () => empty(202) });
+    mockApi({
+      'POST /auth/refresh': unverified,
+      'POST /auth/verification-email': () => empty(202),
+    });
     const { user } = renderApp('/');
     await screen.findByText('Verifica tu correo');
     expect(screen.getByRole('region', { name: 'Verifica tu correo' })).toBeInTheDocument();
@@ -84,7 +91,8 @@ describe('VerifyEmailBanner', () => {
   it('CA-05: si el correo ya estaba verificado lo confirma', async () => {
     mockApi({
       'POST /auth/refresh': unverified,
-      'POST /auth/verification-email': () => problem(409, 'EMAIL_ALREADY_VERIFIED', 'Tu correo ya está verificado.'),
+      'POST /auth/verification-email': () =>
+        problem(409, 'EMAIL_ALREADY_VERIFIED', 'Tu correo ya está verificado.'),
     });
     const { user } = renderApp('/');
     await screen.findByText('Verifica tu correo');

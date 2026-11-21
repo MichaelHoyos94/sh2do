@@ -22,18 +22,24 @@ describe('LoginPage', () => {
     expect(router.state.location.pathname).toBe('/planes/3');
   });
 
-  it.each(['https://evil.com', '//evil.com'])('CA-06: rechaza el redirect externo %s y va a /', async (redirect) => {
-    mockApi({ 'POST /auth/refresh': noSession, 'POST /auth/login': loginOk });
-    const { user, router } = renderApp(`/login?redirect=${encodeURIComponent(redirect)}`);
+  it.each(['https://evil.com', '//evil.com'])(
+    'CA-06: rechaza el redirect externo %s y va a /tasks',
+    async (redirect) => {
+      mockApi({ 'POST /auth/refresh': noSession, 'POST /auth/login': loginOk });
+      const { user, router } = renderApp(`/login?redirect=${encodeURIComponent(redirect)}`);
 
-    await submit(user);
+      await submit(user);
 
-    expect(await screen.findByRole('heading', { name: 'Hola, Ana' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/');
-  });
+      expect(await screen.findByRole('heading', { name: 'Mis pendientes' })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe('/tasks');
+    },
+  );
 
   it('CA-06: un usuario sin verificar puede entrar', async () => {
-    mockApi({ 'POST /auth/refresh': noSession, 'POST /auth/login': () => json(200, makeSession()) });
+    mockApi({
+      'POST /auth/refresh': noSession,
+      'POST /auth/login': () => json(200, makeSession()),
+    });
     const { user } = renderApp('/login');
 
     await submit(user);
@@ -44,7 +50,8 @@ describe('LoginPage', () => {
   it('CA-07: muestra el mensaje genérico de credenciales incorrectas y se queda en el login', async () => {
     mockApi({
       'POST /auth/refresh': noSession,
-      'POST /auth/login': () => problem(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos.'),
+      'POST /auth/login': () =>
+        problem(401, 'INVALID_CREDENTIALS', 'Correo o contraseña incorrectos.'),
     });
     const { user, router } = renderApp('/login');
 
@@ -57,7 +64,8 @@ describe('LoginPage', () => {
   it('CA-08: muestra el mensaje del límite de intentos (429)', async () => {
     mockApi({
       'POST /auth/refresh': noSession,
-      'POST /auth/login': () => problem(429, 'TOO_MANY_REQUESTS', 'Demasiados intentos.', {}, { 'Retry-After': '45' }),
+      'POST /auth/login': () =>
+        problem(429, 'TOO_MANY_REQUESTS', 'Demasiados intentos.', {}, { 'Retry-After': '45' }),
     });
     const { user } = renderApp('/login');
 
@@ -69,13 +77,19 @@ describe('LoginPage', () => {
   it('conserva el redirect válido en el enlace al registro y descarta el externo', async () => {
     mockApi({ 'POST /auth/refresh': noSession });
     renderApp('/login?redirect=%2Fplanes');
-    expect(await screen.findByRole('link', { name: 'Regístrate' })).toHaveAttribute('href', '/register?redirect=%2Fplanes');
+    expect(await screen.findByRole('link', { name: 'Regístrate' })).toHaveAttribute(
+      'href',
+      '/register?redirect=%2Fplanes',
+    );
   });
 
   it('descarta un redirect externo en el enlace al registro', async () => {
     mockApi({ 'POST /auth/refresh': noSession });
     renderApp('/login?redirect=%2F%2Fevil.com');
-    expect(await screen.findByRole('link', { name: 'Regístrate' })).toHaveAttribute('href', '/register');
+    expect(await screen.findByRole('link', { name: 'Regístrate' })).toHaveAttribute(
+      'href',
+      '/register',
+    );
   });
 
   it('pide correo y contraseña antes de llamar a la API, enfocando el primer error', async () => {
@@ -85,9 +99,13 @@ describe('LoginPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Revisa los campos marcados: Correo electrónico, Contraseña.');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Revisa los campos marcados: Correo electrónico, Contraseña.',
+    );
     expect(screen.getByLabelText('Correo electrónico')).toHaveFocus();
-    expect(screen.getByLabelText('Contraseña')).toHaveAccessibleDescription('Escribe tu contraseña.');
+    expect(screen.getByLabelText('Contraseña')).toHaveAccessibleDescription(
+      'Escribe tu contraseña.',
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
