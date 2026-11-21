@@ -9,7 +9,7 @@ const resend = (accessToken: string) =>
   http().post('/api/v1/auth/verification-email').set(bearer(accessToken));
 
 /** Token en claro del último correo encolado (en la BD solo existe su hash). */
-const lastQueuedToken = () => vi.mocked(enqueueSendEmail).mock.lastCall![0].token;
+const lastQueuedToken = () => vi.mocked(enqueueSendEmail).mock.lastCall![0].token!;
 
 describe('POST /auth/verify-email', () => {
   it('CA-04: verifies the email and burns the token', async () => {

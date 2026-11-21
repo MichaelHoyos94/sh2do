@@ -58,7 +58,7 @@ describe('POST /auth/register', () => {
     expect(enqueueSendEmail).toHaveBeenCalledOnce();
     const job = vi.mocked(enqueueSendEmail).mock.calls[0]![0];
     expect(job).toMatchObject({ deliveryId: delivery.id, displayName: 'Ana' });
-    expect(hashToken(job.token)).toBe(token.tokenHash);
+    expect(hashToken(job.token!)).toBe(token.tokenHash);
   });
 
   it('keeps the account when the job cannot be queued', async () => {

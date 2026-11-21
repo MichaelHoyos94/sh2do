@@ -4,7 +4,7 @@ import { prisma, type Db } from '../../shared/db/prisma.js';
 import { AppError } from '../../shared/http/problem.js';
 import { logger } from '../../shared/logger.js';
 import { emailDeliveriesRepository } from '../../shared/mail/email-deliveries.repository.js';
-import { enqueueSendEmail } from '../../shared/queue/queues.js';
+import { enqueueSendEmail, type SendEmailJob } from '../../shared/queue/queues.js';
 import { ACCESS_TOKEN_TTL_SECONDS, signAccessToken } from '../../shared/security/jwt.js';
 import {
   hashPassword,
@@ -15,13 +15,21 @@ import { consume, resetLimit } from '../../shared/security/rate-limit.js';
 import { generateToken, hashToken } from '../../shared/security/tokens.js';
 import { toUserDto } from '../users/users.schemas.js';
 import { usersService } from '../users/users.service.js';
-import type { AuthSessionDto, LoginInput, RegisterInput } from './auth.schemas.js';
+import type {
+  AuthSessionDto,
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResetPasswordInput,
+} from './auth.schemas.js';
+import { passwordResetTokenRepository } from './password-reset-token.repository.js';
 import { sessionRepository } from './session.repository.js';
 import { verificationTokenRepository } from './verification-token.repository.js';
 
 export const REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000; // R-08: 30 días deslizantes
 const REFRESH_RACE_MS = 10_000;
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // R-05
+const RESET_TTL_MS = 24 * 60 * 60 * 1000; // R-02
 const HOUR = 3600;
 
 /** 401 por carrera de refresh: el controlador NO borra la cookie, que ya es la del ganador. */
@@ -57,7 +65,7 @@ async function issueSession(user: User, db: Db = prisma): Promise<AuthResult> {
   };
 }
 
-/** Token + delivery en la misma transacción; el job se encola después (ver enqueueVerification). */
+/** Token + delivery en la misma transacción; el job se encola después (ver enqueueEmail). */
 async function createVerification(user: User, db: Db) {
   const token = generateToken();
   const row = await verificationTokenRepository.create(
@@ -80,13 +88,51 @@ async function createVerification(user: User, db: Db) {
   return { deliveryId: delivery.id, token, displayName: user.displayName ?? '' };
 }
 
-/** Si Redis falla, el registro ya está confirmado: el delivery queda en `queued` y el usuario puede reenviar. */
-async function enqueueVerification(job: Awaited<ReturnType<typeof createVerification>>) {
+/** Si Redis falla, el registro durable ya está confirmado: el delivery queda en `queued` y la reconciliación o un reenvío lo recuperan. */
+async function enqueueEmail(job: SendEmailJob) {
   try {
     await enqueueSendEmail(job);
   } catch (err) {
-    logger.error({ deliveryId: job.deliveryId, err }, 'Could not enqueue verification email');
+    logger.error({ deliveryId: job.deliveryId, err }, 'Could not enqueue email');
   }
+}
+
+/** Token de recuperación + delivery en la misma transacción; el job se encola después. */
+async function createPasswordReset(user: User, db: Db): Promise<SendEmailJob> {
+  const token = generateToken();
+  const row = await passwordResetTokenRepository.create(
+    {
+      userId: user.id,
+      tokenHash: hashToken(token),
+      expiresAt: new Date(clock.now().getTime() + RESET_TTL_MS),
+    },
+    db,
+  );
+  const delivery = await emailDeliveriesRepository.create(
+    {
+      userId: user.id,
+      kind: 'reset_password',
+      recipientEmail: user.email,
+      dedupeKey: `reset_password:${row.id}`,
+    },
+    db,
+  );
+  return { deliveryId: delivery.id, token, displayName: user.displayName ?? '' };
+}
+
+/** Enlace vigente: existe, no se usó ni se anuló y no venció. Si no, 400 con su código. */
+async function findUsableResetToken(token: string) {
+  const row = await passwordResetTokenRepository.findByHash(hashToken(token));
+  if (!row || row.usedAt) {
+    throw new AppError('PASSWORD_RESET_TOKEN_INVALID', 'El enlace de recuperación no es válido.');
+  }
+  if (row.expiresAt <= clock.now()) {
+    throw new AppError(
+      'PASSWORD_RESET_TOKEN_EXPIRED',
+      'El enlace de recuperación venció o ya se usó. Pide uno nuevo.',
+    );
+  }
+  return row;
 }
 
 export const authService = {
@@ -106,7 +152,7 @@ export const authService = {
       );
       return { user, job: await createVerification(user, tx) };
     });
-    await enqueueVerification(job);
+    await enqueueEmail(job);
 
     return issueSession(user);
   },
@@ -205,7 +251,7 @@ export const authService = {
       await verificationTokenRepository.invalidateUnused(userId, clock.now(), tx);
       return createVerification(user, tx);
     });
-    await enqueueVerification(job);
+    await enqueueEmail(job);
   },
 
   /** El worker lo consulta antes de enviar: el enlace sigue vigente si no se usó ni se anuló y el usuario no se verificó. */
@@ -214,5 +260,67 @@ export const authService = {
     if (!row || row.usedAt) return false;
     const user = await usersService.findById(row.userId);
     return !!user && !user.emailVerifiedAt;
+  },
+
+  /** Respuesta genérica (R-01): nunca revela si el correo tiene cuenta. */
+  async requestPasswordReset(input: ForgotPasswordInput, ip: string): Promise<void> {
+    await consume(`rl:pwreset:ip:${ip}`, 10, HOUR); // R-03
+    // Cuenta igual exista o no la cuenta, y la clave no deja correos en claro en Redis.
+    await consume(`rl:pwreset:${hashToken(input.email)}`, 3, HOUR);
+
+    const user = await usersService.findByEmail(input.email);
+    if (!user) return;
+
+    const job = await prisma.$transaction(async (tx) => {
+      await passwordResetTokenRepository.invalidateUnused(user.id, clock.now(), tx);
+      return createPasswordReset(user, tx);
+    });
+    await enqueueEmail(job);
+  },
+
+  async checkPasswordResetToken(token: string): Promise<void> {
+    await findUsableResetToken(token);
+  },
+
+  async resetPassword({ token, password }: ResetPasswordInput): Promise<void> {
+    const row = await findUsableResetToken(token);
+    const user = await usersService.findById(row.userId);
+    if (!user) {
+      throw new AppError('PASSWORD_RESET_TOKEN_INVALID', 'El enlace de recuperación no es válido.');
+    }
+    const passwordHash = await hashPassword(password);
+
+    const now = clock.now();
+    const job = await prisma.$transaction(async (tx) => {
+      // Un solo uso real: si dos peticiones llegan a la vez, solo una gana este UPDATE.
+      if (!(await passwordResetTokenRepository.markUsed(row.id, now, tx))) {
+        throw new AppError(
+          'PASSWORD_RESET_TOKEN_INVALID',
+          'El enlace de recuperación no es válido.',
+        );
+      }
+      await usersService.updatePassword(user.id, passwordHash, tx);
+      await passwordResetTokenRepository.invalidateUnused(user.id, now, tx);
+      await sessionRepository.revokeAllForUser(user.id, now, tx);
+      // Haber recibido el correo demuestra que la cuenta es suya (R-06).
+      if (!user.emailVerifiedAt) await usersService.markEmailVerified(user.id, now, tx);
+      const delivery = await emailDeliveriesRepository.create(
+        {
+          userId: user.id,
+          kind: 'password_changed',
+          recipientEmail: user.email,
+          dedupeKey: `password_changed:${row.id}`,
+        },
+        tx,
+      );
+      return { deliveryId: delivery.id, displayName: user.displayName ?? '' };
+    });
+    await enqueueEmail(job);
+  },
+
+  /** El worker lo consulta antes de enviar: el enlace sigue vigente si no se usó ni se anuló. */
+  async isPasswordResetLinkCurrent(tokenId: number): Promise<boolean> {
+    const row = await passwordResetTokenRepository.findById(tokenId);
+    return !!row && !row.usedAt && row.expiresAt > clock.now();
   },
 };

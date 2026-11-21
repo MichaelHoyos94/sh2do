@@ -1,0 +1,171 @@
+openapi: 3.1.0
+info:
+  title: Sh2do API — STD-7 Recuperar mi contraseña
+  version: 1.0.0
+  description: |
+    Solicitud de enlace de recuperación, comprobación del enlace y cambio de contraseña.
+    Ninguna ruta requiere sesión. El token viaja siempre en el body (nunca en la URL de la API).
+
+    **Errores**: `application/problem+json` (RFC 9457) con `code` estable; `title`, `detail` y `message` en español.
+servers:
+  - url: /api/v1
+
+tags:
+  - name: auth
+
+paths:
+  /auth/forgot-password:
+    post:
+      tags: [auth]
+      operationId: forgotPassword
+      summary: Pedir un enlace de recuperación
+      description: |
+        Respuesta **genérica**: siempre `202`, exista o no la cuenta. Si existe, se anulan los enlaces
+        anteriores sin usar y se envía uno nuevo (válido 24 h, un solo uso).
+        Límites: 3 por hora por correo y 10 por hora por IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForgotPasswordRequest' }
+      responses:
+        '202':
+          description: Solicitud aceptada (no indica si la cuenta existe).
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/reset-password/check:
+    post:
+      tags: [auth]
+      operationId: checkPasswordResetToken
+      summary: Comprobar si un enlace de recuperación sigue vigente
+      description: No modifica nada. La página de cambio lo llama al abrirse.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetTokenRequest' }
+      responses:
+        '204':
+          description: El enlace es vigente.
+        '400': { $ref: '#/components/responses/ResetTokenError' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /auth/reset-password:
+    post:
+      tags: [auth]
+      operationId: resetPassword
+      summary: Fijar una contraseña nueva
+      description: |
+        En una transacción: guarda la contraseña nueva, marca el enlace como usado, anula los demás
+        enlaces pendientes, **cierra todas las sesiones** del usuario y marca el correo como verificado
+        si no lo estaba. Después envía un correo de aviso ("Tu contraseña de Sh2do cambió").
+        La confirmación de la contraseña se valida solo en el frontend.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ResetPasswordRequest' }
+      responses:
+        '204':
+          description: Contraseña cambiada. Se borra la cookie de sesión.
+          headers:
+            Set-Cookie:
+              description: '`sh2do_rt=; HttpOnly; SameSite=Strict; Path=/api/v1/auth; Max-Age=0`'
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/ResetTokenError' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+components:
+  responses:
+    BadRequest:
+      description: |
+        JSON mal formado o cuerpo demasiado grande (`VALIDATION_ERROR`, sin lista de campos).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ResetTokenError:
+      description: |
+        `PASSWORD_RESET_TOKEN_INVALID` (inexistente, ya usado o anulado por una solicitud posterior) o
+        `PASSWORD_RESET_TOKEN_EXPIRED` (más de 24 h).
+        También `VALIDATION_ERROR` (sin lista de campos) si el JSON está mal formado.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/password-reset-token-expired
+            title: Enlace vencido
+            status: 400
+            detail: El enlace de recuperación venció o ya se usó. Pide uno nuevo.
+            code: PASSWORD_RESET_TOKEN_EXPIRED
+    ValidationError:
+      description: Datos inválidos (`VALIDATION_ERROR`), con un error por campo.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Demasiados intentos (`TOO_MANY_REQUESTS`).
+      headers:
+        Retry-After:
+          description: Segundos hasta poder reintentar.
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    ForgotPasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Se normaliza (trim + minúsculas).
+
+    ResetTokenRequest:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 128 }
+
+    ResetPasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [token, password]
+      properties:
+        token: { type: string, minLength: 1, maxLength: 128 }
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: Sin reglas de composición. Se permite repetir la anterior.
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - PASSWORD_RESET_TOKEN_INVALID
+            - PASSWORD_RESET_TOKEN_EXPIRED
+            - TOO_MANY_REQUESTS
+            - INTERNAL_ERROR
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }

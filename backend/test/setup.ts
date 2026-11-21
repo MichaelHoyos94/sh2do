@@ -9,6 +9,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   await prisma.emailDelivery.deleteMany();
   await prisma.emailVerificationToken.deleteMany();
+  await prisma.passwordResetToken.deleteMany();
   await prisma.userSession.deleteMany();
   await prisma.user.deleteMany();
   await redis.flushdb();

@@ -2345,6 +2345,7 @@
           "values": [
             "verify_email",
             "reset_password",
+            "password_changed",
             "reminder",
             "plan_updated",
             "plan_cancelled"

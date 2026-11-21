@@ -55,8 +55,26 @@ export const verifyEmailSchema = z.strictObject({
     .max(128, 'El enlace no es válido.'),
 });
 
+export const forgotPasswordSchema = z.strictObject({ email });
+
+export const resetTokenSchema = z.strictObject({
+  token: z
+    .string({ error: 'El enlace no es válido.' })
+    .min(1, 'El enlace no es válido.')
+    .max(128, 'El enlace no es válido.'),
+});
+
+export const resetPasswordSchema = resetTokenSchema.extend({
+  password: z
+    .string({ error: 'La contraseña es obligatoria.' })
+    .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+    .max(128, 'La contraseña no puede superar los 128 caracteres.'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export interface AuthSessionDto {
   accessToken: string;
