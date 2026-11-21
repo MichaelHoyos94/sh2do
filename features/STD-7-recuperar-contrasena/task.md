@@ -40,4 +40,4 @@
 ## Fase 4 — Validación y entrega
 
 - [x] **T-V01** Tus pruebas manuales y aprobación. Mover STD-7 a **Done** o a **Returned**. *(Aprobado por el responsable el 21-11-2026.)*
-- [ ] **T-V02** Commit en `feature/STD-7-recuperar-contrasena` y pull request hacia `main`. Dos commits: `chore` con el formato de Prettier de los archivos de STD-6 y la comprobación de formato en `lint`, y `feat` con STD-7.
+- [x] **T-V02** Commit en `feature/STD-7-recuperar-contrasena` y pull request hacia `main`. Dos commits: `chore` con el formato de Prettier de los archivos de STD-6 y la comprobación de formato en `lint`, y `feat` con STD-7.
