@@ -1,4 +1,4 @@
-// Fiel a docs/sh2do-model.json. Solo las tablas que usan STD-6 y STD-7; las demás las añade su feature.
+// Fiel a docs/sh2do-model.json. Solo las tablas que usan STD-6, STD-7 y STD-8; las demás las añade su feature.
 
 generator client {
   provider            = "prisma-client"
@@ -20,6 +20,18 @@ enum EmailKind {
   plan_cancelled
 }
 
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+enum OccurrenceStatus {
+  pending
+  in_progress
+  completed
+}
+
 enum EmailStatus {
   queued
   accepted
@@ -36,10 +48,11 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  sessions           UserSession[]
-  verificationTokens EmailVerificationToken[]
+  sessions            UserSession[]
+  verificationTokens  EmailVerificationToken[]
   passwordResetTokens PasswordResetToken[]
-  emailDeliveries    EmailDelivery[]
+  emailDeliveries     EmailDelivery[]
+  tasks               Task[]
 
   @@index([emailVerifiedAt], map: "idx_users_verified")
   @@map("users")
@@ -109,4 +122,50 @@ model EmailDelivery {
   @@index([status, createdAt], map: "idx_email_deliveries_status")
   @@index([userId], map: "idx_email_deliveries_user")
   @@map("email_deliveries")
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  userId      Int          @map("user_id")
+  title       String       @db.VarChar(200)
+  description String?      @db.Text
+  priority    TaskPriority @default(medium)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // RESTRICT hasta que exista el borrado de cuenta (mismo criterio que el resto de FK hacia users).
+  user        User             @relation(fields: [userId], references: [id])
+  occurrences TaskOccurrence[]
+
+  @@index([userId], map: "idx_tasks_owner")
+  @@map("tasks")
+}
+
+model TaskOccurrence {
+  id                  Int              @id @default(autoincrement())
+  taskId              Int              @map("task_id")
+  // Sin relación hasta que exista recurrence_rules (STD-12 añade la FK con ON DELETE SET NULL).
+  recurrenceRuleId    Int?             @map("recurrence_rule_id")
+  sequenceNo          Int              @map("sequence_no")
+  originalDate        DateTime?        @map("original_date") @db.Date
+  scheduledDate       DateTime?        @map("scheduled_date") @db.Date
+  scheduledTime       DateTime?        @map("scheduled_time") @db.Time(0)
+  timezone            String           @db.VarChar(64)
+  scheduledAtUtc      DateTime?        @map("scheduled_at_utc")
+  status              OccurrenceStatus @default(pending)
+  titleOverride       String?          @map("title_override") @db.VarChar(200)
+  descriptionOverride String?          @map("description_override") @db.Text
+  priorityOverride    TaskPriority?    @map("priority_override")
+  remindersOverridden Boolean          @default(false) @map("reminders_overridden")
+  completedAt         DateTime?        @map("completed_at")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, sequenceNo], map: "uq_task_occ_sequence")
+  @@index([scheduledDate, status], map: "idx_occ_user_calendar")
+  @@index([recurrenceRuleId], map: "idx_occ_rule")
+  @@index([scheduledAtUtc], map: "idx_occ_due")
+  @@map("task_occurrences")
 }

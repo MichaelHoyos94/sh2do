@@ -1,11 +1,14 @@
-import { createBrowserRouter, type RouteObject } from 'react-router';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegisterPage } from '@/features/auth/RegisterPage';
 import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { RedirectIfAuthenticated, RequireAuth } from '@/features/auth/RouteGuards';
 import { VerifyEmailPage } from '@/features/auth/VerifyEmailPage';
-import { HomePage } from '@/features/home/HomePage';
+import { EditTaskPage } from '@/features/tasks/EditTaskPage';
+import { NewTaskPage } from '@/features/tasks/NewTaskPage';
+import { TaskDetailPage } from '@/features/tasks/TaskDetailPage';
+import { TasksPage } from '@/features/tasks/TasksPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { AppLayout } from './AppLayout';
 
@@ -28,7 +31,11 @@ export const routes: RouteObject[] = [
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <HomePage /> },
+          { index: true, element: <Navigate to="/tasks" replace /> },
+          { path: '/tasks', element: <TasksPage /> },
+          { path: '/tasks/new', element: <NewTaskPage /> },
+          { path: '/tasks/:taskId', element: <TaskDetailPage /> },
+          { path: '/tasks/:taskId/edit', element: <EditTaskPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -4,7 +4,10 @@ import { AuthProvider } from '@/features/auth/AuthProvider';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
-    () => new QueryClient({ defaultOptions: { mutations: { retry: false } } }),
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      }),
   );
   return (
     <QueryClientProvider client={queryClient}>

@@ -24,6 +24,12 @@ export const usersService = {
 
   findById: (id: number) => usersRepository.findById(id),
 
+  /** Solo la zona horaria: los demás módulos no necesitan (ni deben recibir) la fila con el hash. */
+  async getTimezone(id: number) {
+    const user = await usersRepository.findById(id);
+    return user?.timezone ?? null;
+  },
+
   updatePassword: (id: number, passwordHash: string, db?: Db) =>
     usersRepository.updatePassword(id, passwordHash, db),
 
