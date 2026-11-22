@@ -17,7 +17,9 @@ describe('rutas y sesión', () => {
   it('CA-11: con sesión, una URL inexistente muestra la página 404, y /login y /register llevan a /', async () => {
     mockApi({ 'POST /auth/refresh': verifiedSession });
     const { router } = renderApp('/x');
-    expect(await screen.findByRole('heading', { name: 'Página no encontrada' })).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Página no encontrada' })).toHaveFocus(),
+    );
 
     for (const path of ['/login', '/register']) {
       await router.navigate(path);

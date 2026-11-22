@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 import { setAccessToken, setSessionLostHandler } from '@/api/client';
+
+// Con cobertura en Docker los renders tardan más: 1 s (el valor por defecto) daba fallos intermitentes.
+configure({ asyncUtilTimeout: 3000 });
 
 afterEach(() => {
   cleanup();
