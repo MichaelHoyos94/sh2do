@@ -1,0 +1,164 @@
+openapi: 3.1.0
+info:
+  title: Sh2do API — STD-9 Cambiar el estado de mis pendientes
+  version: 1.0.0
+  description: |
+    Cambiar el estado de un pendiente propio entre `pending`, `in_progress` y `completed`
+    (cualquier transición está permitida, RN-PEN-2). Requiere sesión (Bearer).
+    Un pendiente ajeno o inexistente responde `404`.
+
+    El resto de operaciones sobre pendientes (listar, crear, consultar, editar) están en el
+    contrato de STD-8. El esquema `Task` es el mismo.
+
+    **Errores**: `application/problem+json` (RFC 9457) con `code` estable; `title`, `detail` y `message` en español.
+servers:
+  - url: /api/v1
+
+tags:
+  - name: tasks
+
+security:
+  - bearerAuth: []
+
+paths:
+  /tasks/{taskId}/status:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Un id que no sea un entero positivo responde `404` (antes de validar el body).
+        schema: { type: integer, minimum: 1 }
+    put:
+      tags: [tasks]
+      operationId: setTaskStatus
+      summary: Cambiar el estado de un pendiente
+      description: |
+        Fija el estado del pendiente. Al pasar a `completed` se registra la fecha de completado;
+        al salir de `completed` se borra (no se expone en la respuesta).
+        Si el estado enviado es el que ya tiene, no cambia nada (ni `updatedAt`) y responde `200`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetTaskStatusRequest' }
+      responses:
+        '200':
+          description: El pendiente con su estado actual.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: JSON mal formado o cuerpo demasiado grande (`VALIDATION_ERROR`, sin lista de campos).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthenticated:
+      description: Sin sesión o con un access token inválido o vencido (`UNAUTHENTICATED`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: El pendiente no existe o es de otro usuario (`NOT_FOUND`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/not-found
+            title: No encontrado
+            status: 404
+            detail: Este pendiente no existe.
+            code: NOT_FOUND
+    ValidationError:
+      description: Datos inválidos (`VALIDATION_ERROR`), con un error por campo.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/validation-error
+            title: Datos inválidos
+            status: 422
+            detail: Revisa los campos marcados.
+            code: VALIDATION_ERROR
+            errors:
+              - field: status
+                message: Elige un estado válido.
+
+  schemas:
+    TaskStatus:
+      type: string
+      enum: [pending, in_progress, completed]
+      description: '`pendiente`, `en progreso`, `completado`.'
+
+    TaskPriority:
+      type: string
+      enum: [low, medium, high]
+      description: '`baja`, `media`, `alta`.'
+
+    SetTaskStatusRequest:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/TaskStatus' }
+
+    Task:
+      description: Igual que `Task` en el contrato de STD-8.
+      type: object
+      required:
+        [id, title, description, status, priority, scheduledDate, scheduledTime, timezone, createdAt, updatedAt]
+      properties:
+        id: { type: integer }
+        title: { type: string, maxLength: 200 }
+        description: { type: [string, 'null'], maxLength: 5000 }
+        status: { $ref: '#/components/schemas/TaskStatus' }
+        priority: { $ref: '#/components/schemas/TaskPriority' }
+        scheduledDate:
+          type: [string, 'null']
+          format: date
+          description: Fecha local `YYYY-MM-DD`.
+        scheduledTime:
+          type: [string, 'null']
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: Hora local `HH:mm` (24 h).
+        timezone:
+          type: string
+          description: Zona IANA en la que están la fecha y la hora (la del usuario).
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - UNAUTHENTICATED
+            - NOT_FOUND
+            - INTERNAL_ERROR
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }

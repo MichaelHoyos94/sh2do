@@ -1,3 +1,4 @@
+import { clock } from '../../shared/clock.js';
 import { AppError } from '../../shared/http/problem.js';
 import {
   dateColumnToString,
@@ -13,6 +14,7 @@ import {
   toTaskDto,
   type CreateTaskInput,
   type ListTasksQuery,
+  type TaskStatus,
   type UpdateTaskInput,
 } from './tasks.schemas.js';
 
@@ -116,5 +118,16 @@ export const tasksService = {
         };
 
     return toTaskDto(await tasksRepository.update(taskId, { title, description }, next));
+  },
+
+  /** Transiciones libres (RN-PEN-2). `completed_at` solo existe mientras está completado. */
+  async setStatus(userId: number, taskId: number, status: TaskStatus) {
+    const current = await tasksRepository.findOwned(taskId, userId);
+    if (!current) throw notFound();
+    // Mismo estado: no se escribe nada ni se toca updated_at.
+    if (current.occurrences[0]!.status === status) return toTaskDto(current);
+
+    const completedAt = status === 'completed' ? clock.now() : null;
+    return toTaskDto(await tasksRepository.updateStatus(taskId, status, completedAt));
   },
 };

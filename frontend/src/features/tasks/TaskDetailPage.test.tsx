@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { json, makeTask, mockApi, problem, renderApp, verifiedSession } from '@/test/utils';
 
@@ -22,10 +22,13 @@ describe('TaskDetailPage', () => {
     });
     renderApp('/tasks/7');
 
-    expect(await screen.findByRole('heading', { name: 'Pagar el recibo' })).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Pagar el recibo' })).toHaveFocus(),
+    );
     expect(screen.getByText(/Línea uno/)).toHaveTextContent('Línea dos');
     expect(screen.getByText('sáb, 28 nov 2026 · 18:30')).toBeInTheDocument();
-    expect(screen.getByText('En progreso')).toBeInTheDocument();
+    // Una insignia y el botón marcado del selector de estado.
+    expect(screen.getAllByText('En progreso')).toHaveLength(2);
     expect(screen.getByText('Prioridad: Alta')).toBeInTheDocument();
     expect(screen.getByText('America/Bogota')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Editar' })).toHaveAttribute('href', '/tasks/7/edit');
