@@ -20,3 +20,7 @@ export const getTask: RequestHandler = async (req, res) => {
 export const updateTask: RequestHandler = async (req, res) => {
   res.json(await tasksService.update(req.user!.id, Number(req.params.taskId), req.body));
 };
+
+export const setTaskStatus: RequestHandler = async (req, res) => {
+  res.json(await tasksService.setStatus(req.user!.id, Number(req.params.taskId), req.body.status));
+};

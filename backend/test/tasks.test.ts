@@ -399,3 +399,116 @@ describe('DELETE /tasks/:taskId', () => {
     expect(await prisma.task.count({ where: { id: created.body.id } })).toBe(1);
   });
 });
+
+describe('PUT /tasks/:taskId/status', () => {
+  const put = (id: number | string, body: Record<string, unknown>, as = token) =>
+    http().put(`${TASKS}/${id}/status`).set(bearer(as)).send(body);
+  const occurrenceOf = (taskId: number) =>
+    prisma.taskOccurrence.findFirstOrThrow({ where: { taskId } });
+  const get = (id: number) => http().get(`${TASKS}/${id}`).set(bearer(token));
+
+  it('CA-01: saves the new status, and a later GET and the list return it', async () => {
+    const created = await create({ title: 'Cambiar' });
+    const later = new Date(Date.now() + 60_000);
+    vi.spyOn(clock, 'now').mockReturnValue(later);
+
+    const res = await put(created.body.id, { status: 'in_progress' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: created.body.id, status: 'in_progress' });
+    expect(res.body.updatedAt).toBe(later.toISOString());
+    expect(res.body).not.toHaveProperty('completedAt');
+    expect((await get(created.body.id)).body.status).toBe('in_progress');
+    const list = await http().get(TASKS).set(bearer(token));
+    expect(list.body.items[0].status).toBe('in_progress');
+  });
+
+  it.each([
+    ['pending', 'in_progress'],
+    ['pending', 'completed'],
+    ['in_progress', 'pending'],
+    ['in_progress', 'completed'],
+    ['completed', 'pending'],
+    ['completed', 'in_progress'],
+  ] as const)('CA-02: allows %s -> %s', async (from, to) => {
+    const task = await seedTask(userId, 'Transición');
+    await prisma.taskOccurrence.updateMany({ where: { taskId: task.id }, data: { status: from } });
+
+    const res = await put(task.id, { status: to });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe(to);
+    expect((await occurrenceOf(task.id)).status).toBe(to);
+  });
+
+  it('CA-03: sets completed_at from the clock on completing and clears it on leaving', async () => {
+    const created = await create({ title: 'Completar' });
+    const completedAt = new Date(Date.now() + 60_000);
+    vi.spyOn(clock, 'now').mockReturnValue(completedAt);
+
+    await put(created.body.id, { status: 'completed' });
+    expect((await occurrenceOf(created.body.id)).completedAt).toEqual(completedAt);
+
+    await put(created.body.id, { status: 'pending' });
+    expect((await occurrenceOf(created.body.id)).completedAt).toBeNull();
+  });
+
+  it('CA-04: the same status answers 200 and changes neither updatedAt nor completed_at', async () => {
+    const created = await create({ title: 'Igual' });
+    const done = new Date(Date.now() + 60_000);
+    vi.spyOn(clock, 'now').mockReturnValue(done);
+    const completed = await put(created.body.id, { status: 'completed' });
+    vi.spyOn(clock, 'now').mockReturnValue(new Date(done.getTime() + 60_000));
+
+    const res = await put(created.body.id, { status: 'completed' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(completed.body);
+    expect((await occurrenceOf(created.body.id)).completedAt).toEqual(done);
+  });
+
+  it.each([
+    ['is missing', {}],
+    ['is not a valid state', { status: 'done' }],
+    ['is not text', { status: 3 }],
+    ['comes with extra fields', { status: 'completed', title: 'x' }],
+  ])('CA-06: rejects a body that %s with 422 and changes nothing', async (_label, body) => {
+    const created = await create({ title: 'Validar' });
+
+    const res = await put(created.body.id, body);
+
+    expect(res.status).toBe(422);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.errors).toHaveLength(1);
+    expect((await get(created.body.id)).body).toEqual(created.body);
+  });
+
+  it('CA-06: reports the Spanish message on status', async () => {
+    const created = await create({ title: 'Mensaje' });
+
+    const res = await put(created.body.id, { status: 'done' });
+
+    expect(res.body.errors).toEqual([{ field: 'status', message: 'Elige un estado válido.' }]);
+  });
+
+  it('CA-06: answers 404 for another user task and leaves it untouched', async () => {
+    const theirs = await create({ title: 'De Ana' });
+
+    const res = await put(theirs.body.id, { status: 'completed' }, otherToken);
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('NOT_FOUND');
+    expect((await get(theirs.body.id)).body).toEqual(theirs.body);
+    expect((await occurrenceOf(theirs.body.id)).completedAt).toBeNull();
+  });
+
+  it('CA-06: answers 404 for a missing or non-numeric id, even with an invalid body', async () => {
+    expect((await put(999999, { status: 'completed' })).status).toBe(404);
+    expect((await put('abc', { status: 'completed' })).status).toBe(404);
+    expect((await put('abc', { status: 'done' })).status).toBe(404);
+  });
+
+  it('CA-07: answers 401 without a session', async () => {
+    expect((await http().put(`${TASKS}/1/status`).send({ status: 'completed' })).status).toBe(401);
+  });
+});

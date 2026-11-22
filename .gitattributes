@@ -1,2 +1,6 @@
-* text=auto
+# LF en el repositorio y en la copia de trabajo: Prettier espera LF y core.autocrlf=true en Windows escribía CRLF.
+* text=auto eol=lf
 *.sh text eol=lf
+# Los scripts de cmd necesitan CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf

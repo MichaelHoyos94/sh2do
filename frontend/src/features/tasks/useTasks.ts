@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError } from '@/api/client';
-import type { Task } from '@/api/types';
-import { createTask, getTask, listTasks, updateTask } from './tasksApi';
+import type { Task, TaskStatus } from '@/api/types';
+import { createTask, getTask, listTasks, setTaskStatus, updateTask } from './tasksApi';
 
 const LIST_KEY = ['tasks'] as const;
 
@@ -40,3 +40,5 @@ function useSaveTask<V>(save: (variables: V) => Promise<Task>) {
 export const useCreateTask = () => useSaveTask(createTask);
 export const useUpdateTask = (id: number) =>
   useSaveTask((data: Parameters<typeof updateTask>[1]) => updateTask(id, data));
+export const useSetTaskStatus = (id: number) =>
+  useSaveTask((status: TaskStatus) => setTaskStatus(id, status));

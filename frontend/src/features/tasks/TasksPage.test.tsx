@@ -12,10 +12,12 @@ import {
 
 describe('TasksPage', () => {
   it('CA-04: muestra un estado de carga y luego los pendientes con fecha, estado y prioridad', async () => {
-    let finish = (_response: Response) => {};
+    // La promesa se crea ya: si "Cargando…" aparece antes de que salga el GET, finish sigue sirviendo.
+    let finish!: (response: Response) => void;
+    const pending = new Promise<Response>((resolve) => (finish = resolve));
     mockApi({
       'POST /auth/refresh': verifiedSession,
-      'GET /tasks': () => new Promise<Response>((resolve) => (finish = resolve)),
+      'GET /tasks': () => pending,
     });
     renderApp('/tasks');
 

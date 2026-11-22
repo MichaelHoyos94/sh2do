@@ -72,6 +72,13 @@ export const updateTaskSchema = z.strictObject({
 });
 export type UpdateTaskInput = z.output<typeof updateTaskSchema>;
 
+export const TASK_STATUSES = ['pending', 'in_progress', 'completed'] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const setTaskStatusSchema = z.strictObject({
+  status: z.enum(TASK_STATUSES, { error: 'Elige un estado válido.' }),
+});
+
 const positiveInt = (message: string) =>
   z
     .string()
@@ -98,7 +105,7 @@ export interface TaskDto {
   id: number;
   title: string;
   description: string | null;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: TaskStatus;
   priority: 'low' | 'medium' | 'high';
   scheduledDate: string | null;
   scheduledTime: string | null;

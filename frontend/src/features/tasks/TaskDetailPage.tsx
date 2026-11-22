@@ -8,6 +8,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { formatInstant, formatSchedule } from './format';
 import { TaskBadges } from './TaskBadges';
 import { TaskNotFound } from './TaskNotFound';
+import { TaskStatusPicker } from './TaskStatusPicker';
 import { isTaskNotFound, parseTaskId, useTask } from './useTasks';
 
 export function TaskDetailPage() {
@@ -47,6 +48,7 @@ export function TaskDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <TaskBadges task={task} />
         </div>
+        <TaskStatusPicker task={task} />
         <dl className="grid gap-4 sm:grid-cols-[10rem_1fr]">
           <Detail term="Descripción">
             {task.description ? (

@@ -1,5 +1,6 @@
 import { clock } from '../../shared/clock.js';
 import { prisma } from '../../shared/db/prisma.js';
+import type { TaskStatus } from './tasks.schemas.js';
 
 const withOccurrence = { occurrences: { where: { sequenceNo: 0 } } } as const;
 
@@ -55,6 +56,20 @@ export const tasksRepository = {
       return tx.task.update({
         where: { id },
         data: { ...task, updatedAt: clock.now() },
+        include: withOccurrence,
+      });
+    }),
+
+  /** Estado y `completed_at` de la ocurrencia 0, más `tasks.updated_at`, en una transacción. */
+  updateStatus: (id: number, status: TaskStatus, completedAt: Date | null) =>
+    prisma.$transaction(async (tx) => {
+      await tx.taskOccurrence.update({
+        where: { taskId_sequenceNo: { taskId: id, sequenceNo: 0 } },
+        data: { status, completedAt },
+      });
+      return tx.task.update({
+        where: { id },
+        data: { updatedAt: clock.now() },
         include: withOccurrence,
       });
     }),
