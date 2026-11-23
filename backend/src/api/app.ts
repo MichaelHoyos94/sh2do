@@ -4,6 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import { authRoutes } from '../modules/auth/auth.routes.js';
+import { tagsRoutes } from '../modules/tags/tags.routes.js';
 import { tasksRoutes } from '../modules/tasks/tasks.routes.js';
 import { usersRoutes } from '../modules/users/users.routes.js';
 import { env } from '../shared/config/env.js';
@@ -38,6 +39,7 @@ export function createApp() {
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/users', usersRoutes);
   app.use('/api/v1/tasks', tasksRoutes);
+  app.use('/api/v1/tags', tagsRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

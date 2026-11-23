@@ -627,7 +627,7 @@
       "y": 727.8741520140784,
       "width": 274,
       "color": "#36A27C",
-      "comment": "Etiquetas personales; unicidad por usuario y nombre normalizado.",
+      "comment": "Etiquetas personales; unicidad por usuario y nombre normalizado. name usa la intercalación utf8mb4_0900_as_ci (insensible a mayúsculas, sensible a tildes; STD-10).",
       "fields": [
         {
           "id": 1040,

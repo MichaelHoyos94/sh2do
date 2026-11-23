@@ -7,6 +7,8 @@ vi.mock('../src/shared/queue/queues.js', () => ({ enqueueSendEmail: vi.fn() }));
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  await prisma.taskTag.deleteMany();
+  await prisma.tag.deleteMany();
   await prisma.taskOccurrence.deleteMany();
   await prisma.task.deleteMany();
   await prisma.emailDelivery.deleteMany();

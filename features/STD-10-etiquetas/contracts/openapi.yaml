@@ -1,0 +1,230 @@
+openapi: 3.1.0
+info:
+  title: Sh2do API — STD-10 Crear, editar y eliminar etiquetas propias
+  version: 1.0.0
+  description: |
+    Etiquetas personales: listar, crear, renombrar y eliminar. Son privadas de su dueño (RN-PRO-1).
+    Todas las rutas requieren sesión (Bearer). Una etiqueta ajena o inexistente responde `404`.
+
+    **Nombre normalizado** (RN-PEN-5): se recortan los espacios de los extremos y los espacios
+    repetidos internos se dejan en uno. Se guarda con las mayúsculas originales. Dos nombres
+    del mismo usuario son duplicados si solo difieren en mayúsculas; las tildes sí distinguen.
+
+    Asignar etiquetas a pendientes queda fuera de esta feature (STD-11).
+
+    **Errores**: `application/problem+json` (RFC 9457) con `code` estable; `title`, `detail` y `message` en español.
+servers:
+  - url: /api/v1
+
+tags:
+  - name: tags
+
+security:
+  - bearerAuth: []
+
+paths:
+  /tags:
+    get:
+      tags: [tags]
+      operationId: listTags
+      summary: Listar mis etiquetas
+      description: En orden alfabético sin distinguir mayúsculas (desempate por `id`). Paginación por cursor.
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          description: Valor de `nextCursor` de la página anterior. Opaco para el cliente. Si no corresponde a una etiqueta propia → `422` en `cursor` ("El cursor no es válido.").
+          schema: { type: string, maxLength: 32 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 100 }
+      responses:
+        '200':
+          description: Una página de etiquetas.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TagPage' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    post:
+      tags: [tags]
+      operationId: createTag
+      summary: Crear una etiqueta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TagRequest' }
+      responses:
+        '201':
+          description: Etiqueta creada.
+          headers:
+            Location:
+              description: '`/api/v1/tags/{id}`'
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { $ref: '#/components/responses/TagNameTaken' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /tags/{tagId}:
+    parameters:
+      - name: tagId
+        in: path
+        required: true
+        description: Un id que no sea un entero positivo responde `404` (antes de validar el body).
+        schema: { type: integer, minimum: 1 }
+    patch:
+      tags: [tags]
+      operationId: renameTag
+      summary: Renombrar una etiqueta
+      description: |
+        Se permite cambiar solo las mayúsculas de la propia etiqueta. Si el nombre normalizado
+        es idéntico al actual, responde `200` sin cambios.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TagRequest' }
+      responses:
+        '200':
+          description: Etiqueta renombrada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/TagNameTaken' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      tags: [tags]
+      operationId: deleteTag
+      summary: Eliminar una etiqueta
+      description: La quita de los pendientes que la tuvieran. Los pendientes no se borran ni cambian.
+      responses:
+        '204':
+          description: Etiqueta eliminada.
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: JSON mal formado o cuerpo demasiado grande (`VALIDATION_ERROR`, sin lista de campos).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthenticated:
+      description: Sin sesión o con un access token inválido o vencido (`UNAUTHENTICATED`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: La etiqueta no existe o es de otro usuario (`NOT_FOUND`).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/not-found
+            title: No encontrado
+            status: 404
+            detail: Esta etiqueta no existe.
+            code: NOT_FOUND
+    TagNameTaken:
+      description: Ya tienes otra etiqueta con ese nombre normalizado (`TAG_NAME_TAKEN`). Incluye el error en `name`.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/tag-name-taken
+            title: Etiqueta repetida
+            status: 409
+            detail: Ya tienes una etiqueta con ese nombre.
+            code: TAG_NAME_TAKEN
+            errors:
+              - field: name
+                message: Ya tienes una etiqueta con ese nombre.
+    ValidationError:
+      description: Datos inválidos (`VALIDATION_ERROR`), con un error por campo.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://sh2do.app/problems/validation-error
+            title: Datos inválidos
+            status: 422
+            detail: Revisa los campos marcados.
+            code: VALIDATION_ERROR
+            errors:
+              - field: name
+                message: El nombre es obligatorio.
+
+  schemas:
+    Tag:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id: { type: integer }
+        name: { type: string, minLength: 1, maxLength: 60 }
+        createdAt: { type: string, format: date-time }
+
+    TagPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Tag' }
+        nextCursor:
+          type: [string, 'null']
+          description: '`null` si no hay más páginas.'
+
+    TagRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+          description: |
+            Se normaliza (recorte y espacios internos colapsados). Vacío tras normalizar → `422`
+            "El nombre es obligatorio."; más de 60 caracteres tras normalizar → `422`
+            "El nombre admite como máximo 60 caracteres."
+
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - UNAUTHENTICATED
+            - NOT_FOUND
+            - TAG_NAME_TAKEN
+            - INTERNAL_ERROR
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field: { type: string }
+              message: { type: string }

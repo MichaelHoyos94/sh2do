@@ -2,6 +2,7 @@ import type { components } from './generated/std-6';
 import type { components as std7 } from './generated/std-7';
 import type { components as std8 } from './generated/std-8';
 import type { components as std9 } from './generated/std-9';
+import type { components as std10 } from './generated/std-10';
 
 export type User = components['schemas']['User'];
 export type AuthSession = components['schemas']['AuthSession'];
@@ -19,3 +20,7 @@ export type TaskStatus = std8['schemas']['TaskStatus'];
 export type TaskPriority = std8['schemas']['TaskPriority'];
 export type CreateTaskRequest = std8['schemas']['CreateTaskRequest'];
 export type UpdateTaskRequest = std8['schemas']['UpdateTaskRequest'];
+
+export type Tag = std10['schemas']['Tag'];
+export type TagPage = std10['schemas']['TagPage'];
+export type TagRequest = std10['schemas']['TagRequest'];
