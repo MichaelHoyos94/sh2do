@@ -24,12 +24,18 @@ export function AppLayout() {
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
           <div className="flex items-center gap-6">
             <p className="text-xl font-extrabold tracking-tight text-primary">Sh2do</p>
-            <nav aria-label="Principal">
+            <nav aria-label="Principal" className="flex gap-4">
               <NavLink
                 to="/tasks"
                 className="text-sm font-semibold underline-offset-4 hover:underline aria-[current=page]:text-primary aria-[current=page]:underline"
               >
                 Pendientes
+              </NavLink>
+              <NavLink
+                to="/tags"
+                className="text-sm font-semibold underline-offset-4 hover:underline aria-[current=page]:text-primary aria-[current=page]:underline"
+              >
+                Etiquetas
               </NavLink>
             </nav>
           </div>

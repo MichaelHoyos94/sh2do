@@ -9,6 +9,7 @@ import { EditTaskPage } from '@/features/tasks/EditTaskPage';
 import { NewTaskPage } from '@/features/tasks/NewTaskPage';
 import { TaskDetailPage } from '@/features/tasks/TaskDetailPage';
 import { TasksPage } from '@/features/tasks/TasksPage';
+import { TagsPage } from '@/features/tags/TagsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { AppLayout } from './AppLayout';
 
@@ -36,6 +37,7 @@ export const routes: RouteObject[] = [
           { path: '/tasks/new', element: <NewTaskPage /> },
           { path: '/tasks/:taskId', element: <TaskDetailPage /> },
           { path: '/tasks/:taskId/edit', element: <EditTaskPage /> },
+          { path: '/tags', element: <TagsPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

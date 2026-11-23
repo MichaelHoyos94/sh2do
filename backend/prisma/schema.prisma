@@ -53,6 +53,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   emailDeliveries     EmailDelivery[]
   tasks               Task[]
+  tags                Tag[]
 
   @@index([emailVerifiedAt], map: "idx_users_verified")
   @@map("users")
@@ -136,6 +137,7 @@ model Task {
   // RESTRICT hasta que exista el borrado de cuenta (mismo criterio que el resto de FK hacia users).
   user        User             @relation(fields: [userId], references: [id])
   occurrences TaskOccurrence[]
+  taskTags    TaskTag[]
 
   @@index([userId], map: "idx_tasks_owner")
   @@map("tasks")
@@ -168,4 +170,32 @@ model TaskOccurrence {
   @@index([recurrenceRuleId], map: "idx_occ_rule")
   @@index([scheduledAtUtc], map: "idx_occ_due")
   @@map("task_occurrences")
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String   @db.VarChar(60) // intercalación utf8mb4_0900_as_ci en la migración (plan R-02)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskTags TaskTag[]
+
+  @@unique([userId, name], map: "uq_tags_user_name")
+  @@index([userId], map: "idx_tags_owner")
+  @@map("tags")
+}
+
+model TaskTag {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  tagId     Int      @map("tag_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, tagId], map: "uq_task_tag_pair")
+  @@index([tagId], map: "idx_task_tags_tag")
+  @@map("task_tags")
 }

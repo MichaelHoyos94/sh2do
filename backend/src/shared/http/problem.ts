@@ -12,6 +12,7 @@ export type ProblemCode =
   | 'PASSWORD_RESET_TOKEN_EXPIRED'
   | 'TOO_MANY_REQUESTS'
   | 'NOT_FOUND'
+  | 'TAG_NAME_TAKEN'
   | 'INTERNAL_ERROR';
 
 const DEFAULTS: Record<ProblemCode, { status: number; title: string }> = {
@@ -28,6 +29,7 @@ const DEFAULTS: Record<ProblemCode, { status: number; title: string }> = {
   PASSWORD_RESET_TOKEN_EXPIRED: { status: 400, title: 'Enlace vencido' },
   TOO_MANY_REQUESTS: { status: 429, title: 'Demasiados intentos' },
   NOT_FOUND: { status: 404, title: 'No encontrado' },
+  TAG_NAME_TAKEN: { status: 409, title: 'Etiqueta repetida' },
   INTERNAL_ERROR: { status: 500, title: 'Error interno' },
 };
 
