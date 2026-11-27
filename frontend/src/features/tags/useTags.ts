@@ -17,7 +17,12 @@ function useTagMutation<V>(fn: (variables: V) => Promise<unknown>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: fn,
-    onSettled: () => queryClient.invalidateQueries({ queryKey: LIST_KEY }),
+    onSettled: () =>
+      // Los pendientes llevan el nombre de sus etiquetas: renombrar o eliminar los deja obsoletos.
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: LIST_KEY }),
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+      ]),
   });
 }
 

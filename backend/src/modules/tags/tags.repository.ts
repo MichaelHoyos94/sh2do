@@ -20,6 +20,13 @@ export const tagsRepository = {
   /** Busca por id y dueño a la vez: lo ajeno es indistinguible de lo inexistente. */
   findOwned: (id: number, userId: number) => prisma.tag.findFirst({ where: { id, userId } }),
 
+  /** Solo las propias entre `ids`, en el orden de la lista de etiquetas. */
+  findOwnedByIds: (userId: number, ids: number[]) =>
+    prisma.tag.findMany({
+      where: { userId, id: { in: ids } },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    }),
+
   create: (userId: number, name: string) => prisma.tag.create({ data: { userId, name } }),
 
   rename: (id: number, name: string) => prisma.tag.update({ where: { id }, data: { name } }),

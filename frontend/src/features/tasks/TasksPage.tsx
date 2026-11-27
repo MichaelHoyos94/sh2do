@@ -1,14 +1,23 @@
-import { Link } from 'react-router';
+import { useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router';
 import { describeError } from '@/api/client';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { PageTitle } from '@/components/PageTitle';
 import { formatSchedule } from './format';
 import { TaskBadges } from './TaskBadges';
+import { TaskFilterChips } from './TaskFilterChips';
+import { TaskTags } from './TaskTags';
+import { hasFilters, readFilters, rememberListSearch, writeFilters } from './taskFilters';
 import { useTaskList } from './useTasks';
 
 export function TasksPage() {
-  const list = useTaskList();
+  const [params, setParams] = useSearchParams();
+  const filters = readFilters(params);
+  const search = writeFilters(filters).toString();
+  useEffect(() => rememberListSearch(search), [search]);
+  const filtered = hasFilters(filters);
+  const list = useTaskList(filters);
   const tasks = list.data?.pages.flatMap((page) => page.items) ?? [];
 
   return (
@@ -19,6 +28,8 @@ export function TasksPage() {
           <Link to="/tasks/new">Nuevo pendiente</Link>
         </Button>
       </div>
+
+      <TaskFilterChips filters={filters} onChange={(next) => setParams(writeFilters(next))} />
 
       {list.isPending && (
         <p role="status" className="text-muted-foreground">
@@ -39,8 +50,19 @@ export function TasksPage() {
 
       {list.isSuccess && tasks.length === 0 && (
         <div className="space-y-3 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p className="text-lg font-semibold">Aún no tienes pendientes</p>
-          <p className="text-muted-foreground">Crea el primero y empieza a organizarte.</p>
+          {filtered ? (
+            <>
+              <p className="text-lg font-semibold">Ningún pendiente coincide con los filtros.</p>
+              <Button variant="outline" onClick={() => setParams({})}>
+                Limpiar filtros
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-semibold">Aún no tienes pendientes</p>
+              <p className="text-muted-foreground">Crea el primero y empieza a organizarte.</p>
+            </>
+          )}
         </div>
       )}
 
@@ -57,6 +79,9 @@ export function TasksPage() {
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
                 <span className="text-muted-foreground">{formatSchedule(task)}</span>
                 <TaskBadges task={task} />
+              </div>
+              <div className="mt-2">
+                <TaskTags tags={task.tags} />
               </div>
             </li>
           ))}

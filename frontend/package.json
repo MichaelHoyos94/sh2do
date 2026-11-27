@@ -36,6 +36,6 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check . --ignore-path ../.prettierignore --log-level warn",
-    "gen:api": "openapi-typescript ../features/STD-6-registro-inicio-sesion/contracts/openapi.yaml -o src/api/generated/std-6.ts && openapi-typescript ../features/STD-7-recuperar-contrasena/contracts/openapi.yaml -o src/api/generated/std-7.ts && openapi-typescript ../features/STD-8-crear-editar-consultar-pendiente/contracts/openapi.yaml -o src/api/generated/std-8.ts && openapi-typescript ../features/STD-9-cambiar-estado-pendientes/contracts/openapi.yaml -o src/api/generated/std-9.ts && openapi-typescript ../features/STD-10-etiquetas/contracts/openapi.yaml -o src/api/generated/std-10.ts"
+    "gen:api": "openapi-typescript ../features/STD-6-registro-inicio-sesion/contracts/openapi.yaml -o src/api/generated/std-6.ts && openapi-typescript ../features/STD-7-recuperar-contrasena/contracts/openapi.yaml -o src/api/generated/std-7.ts && openapi-typescript ../features/STD-8-crear-editar-consultar-pendiente/contracts/openapi.yaml -o src/api/generated/std-8.ts && openapi-typescript ../features/STD-9-cambiar-estado-pendientes/contracts/openapi.yaml -o src/api/generated/std-9.ts && openapi-typescript ../features/STD-10-etiquetas/contracts/openapi.yaml -o src/api/generated/std-10.ts && openapi-typescript ../features/STD-11-prioridades-etiquetas-filtros/contracts/openapi.yaml -o src/api/generated/std-11.ts"
   }
 }

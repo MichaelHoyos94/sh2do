@@ -3,6 +3,7 @@ import { PageTitle } from '@/components/PageTitle';
 import { Card } from '@/components/ui/card';
 import { CancelLink } from './CancelLink';
 import { TaskForm } from './TaskForm';
+import { tasksListPath } from './taskFilters';
 import { useCreateTask } from './useTasks';
 
 export function NewTaskPage() {
@@ -20,7 +21,7 @@ export function NewTaskPage() {
           onSubmit={(values) =>
             create.mutate(values, { onSuccess: (task) => navigate(`/tasks/${task.id}`) })
           }
-          footer={<CancelLink to="/tasks" />}
+          footer={<CancelLink to={tasksListPath()} />}
         />
       </Card>
     </div>

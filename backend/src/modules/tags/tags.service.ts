@@ -44,6 +44,16 @@ export const tagsService = {
     };
   },
 
+  /** Para el módulo tasks: de `ids`, los que son etiquetas del usuario (lo ajeno no cuenta). */
+  async findOwnedIds(userId: number, ids: number[]) {
+    return (await tagsRepository.findOwnedByIds(userId, ids)).map((t) => t.id);
+  },
+
+  /** Para el módulo tasks: id y nombre de las etiquetas propias, en orden alfabético. */
+  async getOwnedByIds(userId: number, ids: number[]) {
+    return (await tagsRepository.findOwnedByIds(userId, ids)).map(({ id, name }) => ({ id, name }));
+  },
+
   async create(userId: number, name: string) {
     return toTagDto(await writeName(() => tagsRepository.create(userId, name)));
   },

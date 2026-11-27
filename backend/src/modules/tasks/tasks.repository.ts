@@ -1,8 +1,11 @@
 import { clock } from '../../shared/clock.js';
 import { prisma } from '../../shared/db/prisma.js';
-import type { TaskStatus } from './tasks.schemas.js';
+import type { TaskPriority, TaskStatus } from './tasks.schemas.js';
 
-const withOccurrence = { occurrences: { where: { sequenceNo: 0 } } } as const;
+const withOccurrence = {
+  occurrences: { where: { sequenceNo: 0 } },
+  taskTags: { select: { tagId: true } },
+} as const;
 
 export interface OccurrenceData {
   scheduledDate: Date | null;
@@ -17,6 +20,8 @@ export const tasksRepository = {
     userId: number;
     title: string;
     description: string | null;
+    priority?: TaskPriority;
+    tagIds: number[];
     occurrence: OccurrenceData;
   }) =>
     prisma.task.create({
@@ -24,6 +29,8 @@ export const tasksRepository = {
         userId: data.userId,
         title: data.title,
         description: data.description,
+        priority: data.priority,
+        taskTags: { create: data.tagIds.map((tagId) => ({ tagId })) },
         occurrences: { create: { sequenceNo: 0, ...data.occurrence } },
       },
       include: withOccurrence,
@@ -33,29 +40,56 @@ export const tasksRepository = {
   findOwned: (id: number, userId: number) =>
     prisma.task.findFirst({ where: { id, userId }, include: withOccurrence }),
 
-  /** Del id más alto al más bajo, a partir de `cursor` (excluido). */
-  list: (userId: number, cursor: number | undefined, take: number) =>
+  /** Del id más alto al más bajo, a partir de `cursor` (excluido). OR dentro de cada filtro, AND entre ellos. */
+  list: (
+    userId: number,
+    filters: {
+      cursor?: number;
+      status?: TaskStatus[];
+      priority?: TaskPriority[];
+      tagIds?: number[];
+    },
+    take: number,
+  ) =>
     prisma.task.findMany({
-      where: { userId, ...(cursor !== undefined && { id: { lt: cursor } }) },
+      where: {
+        userId,
+        ...(filters.cursor !== undefined && { id: { lt: filters.cursor } }),
+        ...(filters.priority && { priority: { in: filters.priority } }),
+        ...(filters.status && {
+          occurrences: { some: { sequenceNo: 0, status: { in: filters.status } } },
+        }),
+        ...(filters.tagIds && { taskTags: { some: { tagId: { in: filters.tagIds } } } }),
+      },
       orderBy: { id: 'desc' },
       take,
       include: withOccurrence,
     }),
 
-  /** `tasks.updated_at` se toca siempre, aunque solo cambie la ocurrencia. */
+  /** `tasks.updated_at` se toca siempre. Si viene `tagIds`, sustituye las etiquetas en la misma transacción. */
   update: (
     id: number,
-    task: { title: string; description: string | null },
+    task: {
+      title: string;
+      description: string | null;
+      priority: TaskPriority;
+      tagIds?: number[];
+    },
     occurrence: OccurrenceData,
   ) =>
     prisma.$transaction(async (tx) => {
+      const { tagIds, ...fields } = task;
       await tx.taskOccurrence.update({
         where: { taskId_sequenceNo: { taskId: id, sequenceNo: 0 } },
         data: occurrence,
       });
+      if (tagIds) {
+        await tx.taskTag.deleteMany({ where: { taskId: id } });
+        await tx.taskTag.createMany({ data: tagIds.map((tagId) => ({ taskId: id, tagId })) });
+      }
       return tx.task.update({
         where: { id },
-        data: { ...task, updatedAt: clock.now() },
+        data: { ...fields, updatedAt: clock.now() },
         include: withOccurrence,
       });
     }),

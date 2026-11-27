@@ -12,7 +12,11 @@ type Handler = (req: FakeRequest) => Response | Promise<Response>;
 /** Simula `fetch`. Las claves son "MÉTODO /ruta" (sin el prefijo /api/v1); una ruta sin manejador falla la prueba. */
 export function mockApi(overrides: Record<string, Handler>) {
   // Quien inicia sesión aterriza en /tasks: por defecto la lista llega vacía (una prueba puede sustituirla).
-  const handlers: Record<string, Handler> = { 'GET /tasks': noTasks, ...overrides };
+  const handlers: Record<string, Handler> = {
+    'GET /tasks': noTasks,
+    'GET /tags': () => json(200, { items: [], nextCursor: null }),
+    ...overrides,
+  };
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const key = `${init?.method ?? 'GET'} ${url.replace('/api/v1', '')}`;
     const handler = handlers[key];
@@ -87,6 +91,7 @@ export const makeTask = (overrides: Partial<Task> = {}): Task => ({
   description: null,
   status: 'pending',
   priority: 'medium',
+  tags: [],
   scheduledDate: null,
   scheduledTime: null,
   timezone: 'UTC',

@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { json, makeTask, mockApi, problem, renderApp, verifiedSession } from '@/test/utils';
 
@@ -32,6 +32,30 @@ describe('TaskDetailPage', () => {
     expect(screen.getByText('Prioridad: Alta')).toBeInTheDocument();
     expect(screen.getByText('America/Bogota')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Editar' })).toHaveAttribute('href', '/tasks/7/edit');
+  });
+
+  it('CA-03: muestra las etiquetas del pendiente en una lista "Etiquetas"', async () => {
+    mockApi({
+      'POST /auth/refresh': verifiedSession,
+      'GET /tasks/7': () =>
+        json(
+          200,
+          makeTask({
+            tags: [
+              { id: 3, name: 'Casa' },
+              { id: 7, name: 'Trabajo' },
+            ],
+          }),
+        ),
+    });
+    renderApp('/tasks/7');
+
+    const tags = await screen.findByRole('list', { name: 'Etiquetas' });
+    expect(
+      within(tags)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Casa', 'Trabajo']);
   });
 
   it('indica cuando no hay descripción ni fecha', async () => {
