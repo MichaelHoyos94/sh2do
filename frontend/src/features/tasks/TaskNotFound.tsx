@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { PageTitle } from '@/components/PageTitle';
+import { tasksListPath } from './taskFilters';
 
 export function TaskNotFound() {
   return (
@@ -8,7 +9,7 @@ export function TaskNotFound() {
       <p className="text-muted-foreground">
         Puede que el enlace sea incorrecto o que ya no esté disponible.
       </p>
-      <Link to="/tasks" className="font-semibold text-primary underline underline-offset-4">
+      <Link to={tasksListPath()} className="font-semibold text-primary underline underline-offset-4">
         Volver a mis pendientes
       </Link>
     </div>

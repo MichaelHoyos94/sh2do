@@ -12,4 +12,6 @@ afterEach(() => {
   // El cliente guarda estado de módulo (token y manejador): se reinicia entre pruebas.
   setAccessToken(null);
   setSessionLostHandler(() => {});
+  // Los filtros recordados de la lista (taskFilters) no deben pasar de una prueba a otra.
+  sessionStorage.clear();
 });

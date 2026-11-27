@@ -8,8 +8,10 @@ export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 const MAX_INT = 2_147_483_647; // el id es INT en MySQL
 
-/** Pendiente con su ocurrencia 0 (la única que existe hasta STD-12). */
-export type TaskWithOccurrence = Prisma.TaskGetPayload<{ include: { occurrences: true } }>;
+/** Pendiente con su ocurrencia 0 (la única que existe hasta STD-12) y los ids de sus etiquetas. */
+export type TaskWithOccurrence = Prisma.TaskGetPayload<{
+  include: { occurrences: true; taskTags: { select: { tagId: true } } };
+}>;
 
 const title = z
   .string({ error: 'El título es obligatorio.' })
@@ -42,6 +44,35 @@ const scheduledTime = z
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Escribe la hora con formato HH:mm (24 horas).')
   .nullable();
 
+export const TASK_STATUSES = ['pending', 'in_progress', 'completed'] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const TASK_PRIORITIES = ['low', 'medium', 'high'] as const;
+export type TaskPriority = (typeof TASK_PRIORITIES)[number];
+
+export const MAX_TAGS_PER_TASK = 20;
+
+const priority = z.enum(TASK_PRIORITIES, { error: 'Elige una prioridad válida.' });
+
+// Un solo error en el campo `tagIds` (no por elemento), con el mensaje del contrato.
+const tagIds = z
+  .array(z.unknown(), { error: 'Las etiquetas deben ser una lista de ids.' })
+  .check((ctx) => {
+    const ids = ctx.value;
+    const message =
+      ids.length > MAX_TAGS_PER_TASK
+        ? `Un pendiente admite como máximo ${MAX_TAGS_PER_TASK} etiquetas.`
+        : !ids.every(
+              (id) => Number.isInteger(id) && (id as number) >= 1 && (id as number) <= MAX_INT,
+            )
+          ? 'Los ids de etiquetas deben ser enteros positivos.'
+          : new Set(ids).size !== ids.length
+            ? 'No repitas etiquetas.'
+            : null;
+    if (message) ctx.issues.push({ code: 'custom', input: ids, message });
+  })
+  .transform((ids) => ids as number[]);
+
 export const TIME_WITHOUT_DATE_MESSAGE = 'Pon una fecha para poder elegir la hora.';
 
 export const createTaskSchema = z
@@ -50,6 +81,8 @@ export const createTaskSchema = z
     description: description.optional(),
     scheduledDate: scheduledDate.optional(),
     scheduledTime: scheduledTime.optional(),
+    priority: priority.optional(),
+    tagIds: tagIds.optional(),
   })
   .check((ctx) => {
     if (ctx.value.scheduledTime && !ctx.value.scheduledDate) {
@@ -69,11 +102,10 @@ export const updateTaskSchema = z.strictObject({
   description: description.optional(),
   scheduledDate: scheduledDate.optional(),
   scheduledTime: scheduledTime.optional(),
+  priority: priority.optional(),
+  tagIds: tagIds.optional(),
 });
 export type UpdateTaskInput = z.output<typeof updateTaskSchema>;
-
-export const TASK_STATUSES = ['pending', 'in_progress', 'completed'] as const;
-export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export const setTaskStatusSchema = z.strictObject({
   status: z.enum(TASK_STATUSES, { error: 'Elige un estado válido.' }),
@@ -88,7 +120,28 @@ const positiveInt = (message: string) =>
 
 const limitMessage = `El límite debe ser un entero entre 1 y ${MAX_PAGE_SIZE}.`;
 
+/** Lista separada por comas → array; cualquier valor inválido es un único error en el parámetro. */
+const csv = <T>(parse: (item: string) => T | undefined, message: string, max = Infinity) =>
+  z.string({ error: message }).transform((raw, ctx) => {
+    const items = raw.split(',').map(parse);
+    if (items.length > max || items.some((i) => i === undefined)) {
+      ctx.issues.push({ code: 'custom', input: raw, message });
+      return z.NEVER;
+    }
+    return items as T[];
+  });
+
 export const listTasksQuerySchema = z.strictObject({
+  status: csv((s) => z.enum(TASK_STATUSES).safeParse(s).data, 'Elige estados válidos.').optional(),
+  priority: csv(
+    (s) => z.enum(TASK_PRIORITIES).safeParse(s).data,
+    'Elige prioridades válidas.',
+  ).optional(),
+  tagIds: csv(
+    (s) => positiveInt('').safeParse(s).data,
+    `Elige entre 1 y ${MAX_TAGS_PER_TASK} etiquetas válidas.`,
+    MAX_TAGS_PER_TASK,
+  ).optional(),
   cursor: positiveInt('El cursor no es válido.').optional(),
   limit: z
     .string()
@@ -106,7 +159,8 @@ export interface TaskDto {
   title: string;
   description: string | null;
   status: TaskStatus;
-  priority: 'low' | 'medium' | 'high';
+  priority: TaskPriority;
+  tags: { id: number; name: string }[];
   scheduledDate: string | null;
   scheduledTime: string | null;
   timezone: string;
@@ -114,8 +168,9 @@ export interface TaskDto {
   updatedAt: string;
 }
 
-/** Aplana la ocurrencia 0: la API no expone ocurrencias en esta feature. */
-export function toTaskDto(task: TaskWithOccurrence): TaskDto {
+/** Aplana la ocurrencia 0 (la API no expone ocurrencias en esta feature). `tags` son las del grupo, ya en orden alfabético. */
+export function toTaskDto(task: TaskWithOccurrence, tags: { id: number; name: string }[]): TaskDto {
+  const own = new Set(task.taskTags.map((t) => t.tagId));
   const occurrence = task.occurrences.find((o) => o.sequenceNo === 0);
   if (!occurrence) throw new Error(`Task ${task.id} has no occurrence 0`);
   return {
@@ -124,6 +179,7 @@ export function toTaskDto(task: TaskWithOccurrence): TaskDto {
     description: task.description,
     status: occurrence.status,
     priority: task.priority,
+    tags: tags.filter((t) => own.has(t.id)),
     scheduledDate: dateColumnToString(occurrence.scheduledDate),
     scheduledTime: timeColumnToString(occurrence.scheduledTime),
     timezone: occurrence.timezone,

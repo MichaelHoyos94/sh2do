@@ -7,11 +7,14 @@ import type {
   TaskStatus,
   UpdateTaskRequest,
 } from '@/api/types';
+import { writeFilters, type TaskFilters } from './taskFilters';
 
-export const listTasks = (cursor?: string | null) =>
-  request<TaskPage>('GET', cursor ? `/tasks?cursor=${encodeURIComponent(cursor)}` : '/tasks', {
-    auth: true,
-  });
+export function listTasks(filters: TaskFilters, cursor?: string | null) {
+  const params = writeFilters(filters);
+  if (cursor) params.set('cursor', cursor);
+  const query = params.toString().replaceAll('%2C', ',');
+  return request<TaskPage>('GET', query ? `/tasks?${query}` : '/tasks', { auth: true });
+}
 export const getTask = (id: number) => request<Task>('GET', `/tasks/${id}`, { auth: true });
 export const createTask = (data: CreateTaskRequest) =>
   request<Task>('POST', '/tasks', { auth: true, body: data });

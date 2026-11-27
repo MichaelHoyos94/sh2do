@@ -7,8 +7,10 @@ import { Card } from '@/components/ui/card';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { formatInstant, formatSchedule } from './format';
 import { TaskBadges } from './TaskBadges';
+import { TaskTags } from './TaskTags';
 import { TaskNotFound } from './TaskNotFound';
 import { TaskStatusPicker } from './TaskStatusPicker';
+import { tasksListPath } from './taskFilters';
 import { isTaskNotFound, parseTaskId, useTask } from './useTasks';
 
 export function TaskDetailPage() {
@@ -35,7 +37,10 @@ export function TaskDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/tasks" className="text-sm font-semibold text-primary underline underline-offset-4">
+      <Link
+        to={tasksListPath()}
+        className="text-sm font-semibold text-primary underline underline-offset-4"
+      >
         Volver a mis pendientes
       </Link>
       <Card className="space-y-6">
@@ -48,6 +53,7 @@ export function TaskDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <TaskBadges task={task} />
         </div>
+        <TaskTags tags={task.tags} />
         <TaskStatusPicker task={task} />
         <dl className="grid gap-4 sm:grid-cols-[10rem_1fr]">
           <Detail term="Descripción">

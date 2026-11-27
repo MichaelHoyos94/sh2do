@@ -110,7 +110,6 @@ describe('POST /tasks', () => {
     ['a malformed time', { scheduledDate: '2026-11-28', scheduledTime: '25:00' }, 'scheduledTime'],
     ['a description over 5000 characters', { description: 'x'.repeat(5001) }, 'description'],
     ['a status in the body', { status: 'completed' }, 'status'],
-    ['a priority in the body', { priority: 'high' }, 'priority'],
   ])('CA-03: rejects %s', async (_label, extra, field) => {
     const res = await create({ title: 'Inválido', ...extra });
 
@@ -208,6 +207,7 @@ describe('GET /tasks/:taskId', () => {
         'scheduledDate',
         'scheduledTime',
         'status',
+        'tags',
         'timezone',
         'title',
         'updatedAt',

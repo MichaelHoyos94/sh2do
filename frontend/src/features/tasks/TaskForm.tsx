@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -6,15 +7,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { ErrorSummary } from '@/features/auth/ErrorSummary';
 import { FormField } from '@/features/auth/FormField';
 import { splitError, useFocusFirstError, type FieldErrors } from '@/features/auth/formErrors';
-import type { Task } from '@/api/types';
-import { DESCRIPTION_MAX, TITLE_MAX, type TaskValues } from './taskValues';
+import type { Task, TaskPriority } from '@/api/types';
+import { useTags } from '@/features/tags/useTags';
+import { PRIORITY_LABELS } from './format';
+import { DESCRIPTION_MAX, TAGS_MAX, TITLE_MAX, type TaskValues } from './taskValues';
 
 const LABELS = {
   title: 'Título',
   description: 'Descripción',
   scheduledDate: 'Fecha',
   scheduledTime: 'Hora',
+  priority: 'Prioridad',
+  tagIds: 'Etiquetas',
 };
+const PRIORITIES = Object.entries(PRIORITY_LABELS) as [TaskPriority, string][];
 const FIELDS = Object.keys(LABELS);
 
 type Props = {
@@ -33,6 +39,8 @@ export function TaskForm({ initial, submitLabel, pending, error, onSubmit, foote
   const [description, setDescription] = useState(initial?.description ?? '');
   const [date, setDate] = useState(initial?.scheduledDate ?? '');
   const [time, setTime] = useState(initial?.scheduledTime ?? '');
+  const [priority, setPriority] = useState<TaskPriority>(initial?.priority ?? 'medium');
+  const [tagIds, setTagIds] = useState<number[]>(initial?.tags.map((tag) => tag.id) ?? []);
   const [clientErrors, setClientErrors] = useState<FieldErrors>({});
 
   const server = useMemo(() => (error ? splitError(error, FIELDS) : null), [error]);
@@ -44,6 +52,10 @@ export function TaskForm({ initial, submitLabel, pending, error, onSubmit, foote
   );
   const formError = clientFailed ? null : (server?.form ?? null);
   useFocusFirstError(errors, FIELDS);
+
+  function toggleTag(id: number) {
+    setTagIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  }
 
   function onDateChange(value: string) {
     setDate(value);
@@ -71,6 +83,8 @@ export function TaskForm({ initial, submitLabel, pending, error, onSubmit, foote
       description: description.trim() || null,
       scheduledDate: date || null,
       scheduledTime: date && time ? time : null,
+      priority,
+      tagIds,
     });
   }
 
@@ -128,6 +142,24 @@ export function TaskForm({ initial, submitLabel, pending, error, onSubmit, foote
           error={errors.scheduledTime}
         />
       </div>
+      <Fieldset id="priority" legend="Prioridad" error={errors.priority}>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {PRIORITIES.map(([value, label]) => (
+            <label key={value} className="flex min-h-11 items-center gap-2">
+              <input
+                type="radio"
+                name="priority"
+                value={value}
+                checked={priority === value}
+                onChange={() => setPriority(value)}
+                className="h-5 w-5"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </Fieldset>
+      <TagsFieldset selected={tagIds} onToggle={toggleTag} error={errors.tagIds} />
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending}>
           {pending ? 'Guardando…' : submitLabel}
@@ -135,5 +167,81 @@ export function TaskForm({ initial, submitLabel, pending, error, onSubmit, foote
         {footer}
       </div>
     </form>
+  );
+}
+
+type FieldsetProps = { id: string; legend: string; error?: string; children: ReactNode };
+
+/** Grupo de opciones: el error del servidor se asocia al grupo y el foco puede llegar a él. */
+function Fieldset({ id, legend, error, children }: FieldsetProps) {
+  return (
+    <fieldset
+      id={id}
+      tabIndex={-1}
+      aria-describedby={error ? `${id}-error` : undefined}
+      className="space-y-2"
+    >
+      <legend className="mb-1 text-sm font-medium">{legend}</legend>
+      {children}
+      {error && (
+        <p id={`${id}-error`} className="text-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
+type TagsProps = { selected: number[]; onToggle: (id: number) => void; error?: string };
+
+function TagsFieldset({ selected, onToggle, error }: TagsProps) {
+  const query = useTags();
+  const tags = (query.data?.pages.flatMap((page) => page.items) ?? []).toSorted((a, b) =>
+    a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }),
+  );
+  const full = selected.length >= TAGS_MAX;
+
+  return (
+    <Fieldset id="tagIds" legend="Etiquetas" error={error}>
+      {query.isSuccess && tags.length === 0 && (
+        <p className="text-muted-foreground">
+          Aún no tienes etiquetas.{' '}
+          <Link to="/tags" className="font-semibold text-primary underline underline-offset-4">
+            Crear etiquetas
+          </Link>
+        </p>
+      )}
+      {query.isError && (
+        <p className="text-muted-foreground">No se pudieron cargar las etiquetas.</p>
+      )}
+      <div className="flex flex-wrap gap-x-6 gap-y-1">
+        {tags.map((tag) => {
+          const checked = selected.includes(tag.id);
+          return (
+            <label key={tag.id} className="flex min-h-11 items-center gap-2 break-all">
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={full && !checked}
+                onChange={() => onToggle(tag.id)}
+                className="h-5 w-5"
+              />
+              {tag.name}
+            </label>
+          );
+        })}
+      </div>
+      {full && <p className="text-sm text-muted-foreground">Máximo {TAGS_MAX} etiquetas</p>}
+      {query.hasNextPage && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void query.fetchNextPage()}
+          disabled={query.isFetchingNextPage}
+        >
+          {query.isFetchingNextPage ? 'Cargando…' : 'Cargar más etiquetas'}
+        </Button>
+      )}
+    </Fieldset>
   );
 }

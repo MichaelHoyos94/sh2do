@@ -1,6 +1,14 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { json, makeTask, mockApi, problem, renderApp, taskPage, verifiedSession } from '@/test/utils';
+import {
+  json,
+  makeTask,
+  mockApi,
+  problem,
+  renderApp,
+  taskPage,
+  verifiedSession,
+} from '@/test/utils';
 
 const isCall = (fetchMock: ReturnType<typeof mockApi>, method: string, path: string) =>
   fetchMock.mock.calls.filter(
@@ -69,7 +77,9 @@ describe('TaskStatusPicker', () => {
 
     // La lista quedó obsoleta: al volver a ella se pide de nuevo y muestra el estado nuevo.
     await user.click(screen.getByRole('link', { name: 'Volver a mis pendientes' }));
-    expect(await screen.findByText('Completado')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(screen.getByRole('listitem')).getByText('Completado')).toBeInTheDocument(),
+    );
     expect(isCall(fetchMock, 'GET', '/tasks').length).toBeGreaterThanOrEqual(2);
   });
 
@@ -101,7 +111,8 @@ describe('TaskStatusPicker', () => {
     mockApi({
       'POST /auth/refresh': verifiedSession,
       'GET /tasks/7': () => json(200, makeTask({ status: 'completed' })),
-      'PUT /tasks/7/status': (req) => json(200, makeTask({ status: req.body!.status as 'pending' })),
+      'PUT /tasks/7/status': (req) =>
+        json(200, makeTask({ status: req.body!.status as 'pending' })),
     });
     const { user } = renderApp('/tasks/7');
     await screen.findByRole('group', { name: 'Estado' });

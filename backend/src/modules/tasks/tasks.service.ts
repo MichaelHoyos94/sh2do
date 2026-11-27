@@ -1,3 +1,4 @@
+import { Prisma } from '../../generated/prisma/client.js';
 import { clock } from '../../shared/clock.js';
 import { AppError } from '../../shared/http/problem.js';
 import {
@@ -7,6 +8,7 @@ import {
   timeColumnToString,
   toUtcInstant,
 } from '../../shared/time.js';
+import { tagsService } from '../tags/tags.service.js';
 import { usersService } from '../users/users.service.js';
 import { tasksRepository, type OccurrenceData } from './tasks.repository.js';
 import {
@@ -14,6 +16,7 @@ import {
   toTaskDto,
   type CreateTaskInput,
   type ListTasksQuery,
+  type TaskWithOccurrence,
   type TaskStatus,
   type UpdateTaskInput,
 } from './tasks.schemas.js';
@@ -48,29 +51,71 @@ function assertTimeHasDate(date: string | null, time: string | null) {
   }
 }
 
+const TAGS_NOT_FOUND = 'Alguna de las etiquetas elegidas no existe.';
+const tagsNotFound = () =>
+  new AppError('VALIDATION_ERROR', 'Revisa los campos marcados.', {
+    errors: [{ field: 'tagIds', message: TAGS_NOT_FOUND }],
+  });
+
+/** Ajena e inexistente dan el mismo 422: no se revela cuál ni por qué (R-03). */
+async function assertOwnedTags(userId: number, tagIds: number[] | undefined) {
+  if (!tagIds?.length) return;
+  if ((await tagsService.findOwnedIds(userId, tagIds)).length !== tagIds.length)
+    throw tagsNotFound();
+}
+
+/** Una etiqueta eliminada entre la validación y la escritura rompe la FK (R-05). */
+async function writeTags<T>(write: () => Promise<T>) {
+  try {
+    return await write();
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
+      throw tagsNotFound();
+    }
+    throw err;
+  }
+}
+
+/** DTOs de una página con una sola consulta de nombres de etiquetas. */
+async function toDtos(userId: number, tasks: TaskWithOccurrence[]) {
+  const ids = [...new Set(tasks.flatMap((t) => t.taskTags.map((tt) => tt.tagId)))];
+  const tags = ids.length ? await tagsService.getOwnedByIds(userId, ids) : [];
+  return tasks.map((t) => toTaskDto(t, tags));
+}
+
+const toDto = async (userId: number, task: TaskWithOccurrence) =>
+  (await toDtos(userId, [task]))[0]!;
+
 export const tasksService = {
   async create(userId: number, input: CreateTaskInput) {
     const timezone = await getUserTimezone(userId);
-    const task = await tasksRepository.create({
-      userId,
-      title: input.title,
-      description: input.description ?? null,
-      occurrence: buildOccurrence(
-        input.scheduledDate ?? null,
-        input.scheduledTime ?? null,
-        timezone,
-      ),
-    });
-    return toTaskDto(task);
+    const tagIds = input.tagIds ?? [];
+    await assertOwnedTags(userId, tagIds);
+    const task = await writeTags(() =>
+      tasksRepository.create({
+        userId,
+        title: input.title,
+        description: input.description ?? null,
+        priority: input.priority,
+        tagIds,
+        occurrence: buildOccurrence(
+          input.scheduledDate ?? null,
+          input.scheduledTime ?? null,
+          timezone,
+        ),
+      }),
+    );
+    return toDto(userId, task);
   },
 
   async list(userId: number, query: ListTasksQuery) {
     // Se pide una fila de más para saber si hay otra página.
-    const rows = await tasksRepository.list(userId, query.cursor, query.limit + 1);
-    const hasMore = rows.length > query.limit;
-    const page = hasMore ? rows.slice(0, query.limit) : rows;
+    const { limit, ...filters } = query;
+    const rows = await tasksRepository.list(userId, filters, limit + 1);
+    const hasMore = rows.length > limit;
+    const page = hasMore ? rows.slice(0, limit) : rows;
     return {
-      items: page.map(toTaskDto),
+      items: await toDtos(userId, page),
       nextCursor: hasMore ? String(page[page.length - 1]!.id) : null,
     };
   },
@@ -78,7 +123,7 @@ export const tasksService = {
   async getOwned(userId: number, taskId: number) {
     const task = await tasksRepository.findOwned(taskId, userId);
     if (!task) throw notFound();
-    return toTaskDto(task);
+    return toDto(userId, task);
   },
 
   async update(userId: number, taskId: number, input: UpdateTaskInput) {
@@ -102,10 +147,25 @@ export const tasksService = {
     const title = input.title ?? current.title;
     const description = input.description !== undefined ? input.description : current.description;
     const scheduleChanged = date !== currentDate || time !== currentTime;
+    const priority = input.priority ?? current.priority;
+
+    await assertOwnedTags(userId, input.tagIds);
+    const currentTagIds = new Set(current.taskTags.map((t) => t.tagId));
+    // El conjunto, sin importar el orden (R-06).
+    const tagsChanged =
+      input.tagIds !== undefined &&
+      (input.tagIds.length !== currentTagIds.size ||
+        !input.tagIds.every((id) => currentTagIds.has(id)));
 
     // Sin cambios reales (p. ej. body vacío): no se escribe nada ni se toca updated_at.
-    if (title === current.title && description === current.description && !scheduleChanged) {
-      return toTaskDto(current);
+    if (
+      title === current.title &&
+      description === current.description &&
+      priority === current.priority &&
+      !tagsChanged &&
+      !scheduleChanged
+    ) {
+      return toDto(userId, current);
     }
 
     const next: OccurrenceData = scheduleChanged
@@ -117,7 +177,14 @@ export const tasksService = {
           scheduledAtUtc: occurrence.scheduledAtUtc,
         };
 
-    return toTaskDto(await tasksRepository.update(taskId, { title, description }, next));
+    const updated = await writeTags(() =>
+      tasksRepository.update(
+        taskId,
+        { title, description, priority, tagIds: tagsChanged ? input.tagIds : undefined },
+        next,
+      ),
+    );
+    return toDto(userId, updated);
   },
 
   /** Transiciones libres (RN-PEN-2). `completed_at` solo existe mientras está completado. */
@@ -125,9 +192,9 @@ export const tasksService = {
     const current = await tasksRepository.findOwned(taskId, userId);
     if (!current) throw notFound();
     // Mismo estado: no se escribe nada ni se toca updated_at.
-    if (current.occurrences[0]!.status === status) return toTaskDto(current);
+    if (current.occurrences[0]!.status === status) return toDto(userId, current);
 
     const completedAt = status === 'completed' ? clock.now() : null;
-    return toTaskDto(await tasksRepository.updateStatus(taskId, status, completedAt));
+    return toDto(userId, await tasksRepository.updateStatus(taskId, status, completedAt));
   },
 };

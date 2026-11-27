@@ -57,6 +57,8 @@ describe('crear un pendiente', () => {
       description: 'Integral',
       scheduledDate: '2026-11-28',
       scheduledTime: '18:30',
+      priority: 'medium',
+      tagIds: [],
     });
 
     await user.click(screen.getByRole('link', { name: 'Volver a mis pendientes' }));
@@ -81,6 +83,8 @@ describe('crear un pendiente', () => {
       description: null,
       scheduledDate: null,
       scheduledTime: null,
+      priority: 'medium',
+      tagIds: [],
     });
   });
 
@@ -96,7 +100,7 @@ describe('crear un pendiente', () => {
     expect(title).toHaveAccessibleDescription('El título es obligatorio.');
     expect(title).toHaveAttribute('aria-invalid', 'true');
     expect(title).toHaveFocus();
-    expect(fetchMock).toHaveBeenCalledTimes(1); // solo el refresh inicial
+    expect(fetchMock).toHaveBeenCalledTimes(2); // refresh inicial y etiquetas
   });
 
   it('CA-02: un título de más de 200 caracteres no se envía', async () => {
@@ -107,7 +111,7 @@ describe('crear un pendiente', () => {
     await user.click(screen.getByRole('button', { name: 'Crear pendiente' }));
 
     expect(screen.getByLabelText('Título')).toHaveAccessibleDescription(/200 caracteres/);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // refresh inicial y etiquetas
   });
 
   it('CA-02: una descripción de más de 5000 caracteres no se envía', async () => {
@@ -123,7 +127,7 @@ describe('crear un pendiente', () => {
     expect(screen.getByLabelText('Descripción (opcional)')).toHaveAccessibleDescription(
       /5000 caracteres/,
     );
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2); // refresh inicial y etiquetas
   });
 
   it('CA-02: muestra por campo el 422 del servidor', async () => {
@@ -194,6 +198,6 @@ describe('crear un pendiente', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Revisa los campos marcados: Fecha');
     expect(date).toHaveAccessibleDescription('Escribe una fecha válida o déjala vacía.');
     expect(date).toHaveFocus();
-    expect(fetchMock).toHaveBeenCalledTimes(1); // solo el refresh inicial
+    expect(fetchMock).toHaveBeenCalledTimes(2); // refresh inicial y etiquetas
   });
 });
